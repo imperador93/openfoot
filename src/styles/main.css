@@ -18,13 +18,13 @@
   --color-accent-content: oklch(15% 0.05 90);
   --color-neutral: oklch(22% 0.025 170);
   --color-neutral-content: oklch(95% 0 0);
-  --color-info: oklch(65% 0.15 240);
+  --color-info: oklch(66% 0.15 240);
   --color-info-content: oklch(29% 0.066 243.157);
-  --color-success: oklch(68% 0.24 142);
+  --color-success: oklch(78% 0.24 142);
   --color-success-content: oklch(37% 0.077 168.94);
   --color-warning: oklch(80% 0.18 90);
   --color-warning-content: oklch(41% 0.112 45.904);
-  --color-error: oklch(60% 0.22 25);
+  --color-error: oklch(68.5% 0.22 25);
   --color-error-content: oklch(27% 0.105 12.094);
   --radius-selector: 0.5rem;
   --radius-field: 0.25rem;
