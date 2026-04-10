@@ -15,7 +15,7 @@ import { cn } from '@/utils/styles'
 
 interface SidebarProps {
   activeTab: TabType | null
-  onChangeTab: React.Dispatch<React.SetStateAction<TabType | null>>
+  onChangeTab: (tab: TabType) => void
 }
 
 const Sidebar = ({ activeTab, onChangeTab }: SidebarProps) => {

@@ -1,5 +1,5 @@
 import { ptBRMessages } from '@/lang/pt_BR'
-import { flattenObject } from '@/utils/object'
+import { flattenObject } from '@/utils/objects'
 
 export const defaultLocale = 'pt-BR'
 

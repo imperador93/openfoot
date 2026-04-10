@@ -2,78 +2,83 @@
  * Níveis de reputação do jogador.
  * Categoriza-o com base em seu desempenho, conquistas e reconhecimento no futebol.
  *
- * - BAD: Jogadores com desempenho e resultados ruins. - ex.: Rony
- * - AVERAGE: Jogadores com sucesso moderado e consistência. - ex.: Matheus Pereira
- * - GOOD: Jogadores conhecidos por desempenho sólido e resultados positivos. - ex.: Philippe Coutinho
- * - EXCELLENT: Jogadores com histórico de alto desempenho e sucesso. - ex.: Neymar Jr.
- * - WORLD_CLASS: Jogadores de elite reconhecidos globalmente por suas habilidades e conquistas excepcionais. ex.: Cristiano Ronaldo
+ * @enum {number}
  */
 export enum PlayerReputation {
+  /** Jogador com desempenho e resultados ruins. - ex.: Rony */
   BAD = 1,
+  /** Jogador com sucesso moderado e consistência. - ex.: Matheus Pereira */
   AVERAGE = 2,
+  /** Jogador conhecido por desempenho sólido e resultados positivos. - ex.: Philippe Coutinho */
   GOOD = 3,
+  /** Jogador com histórico de alto desempenho e sucesso. - ex.: Neymar Jr. */
   EXCELLENT = 4,
+  /** Jogador de elite reconhecido globalmente por suas habilidades e conquistas excepcionais. - ex.: Cristiano Ronaldo */
   WORLD_CLASS = 5,
 }
 
 /**
  * Posições do jogador
  *
- * - GOALKEEPER: Goleiro
- * - DEFENDER: Zagueiro
- * - SIDE_BACK: Lateral
- * - MIDFIELDER: Meio-campista
- * - FORWARD: Atacante
+ * @enum {string}
  */
 export enum PlayerPosition {
+  /** Goleiro */
   GOALKEEPER = 'GK',
+  /** Zagueiro */
   DEFENDER = 'DF',
+  /** Lateral */
   SIDE_BACK = 'SB',
+  /** Meio-campista */
   MIDFIELDER = 'MF',
+  /** Atacante */
   FORWARD = 'FW',
 }
 
 /**
  * Pé dominante do jogador
  *
- * - LEFT: Canhoto
- * - RIGHT: Destro
- * - BOTH: Ambidestro
+ * @enum {string}
  */
 export enum PlayerFoot {
+  /** Canhoto */
   LEFT = 'L',
+  /** Destro */
   RIGHT = 'R',
+  /** Ambidestro */
   BOTH = 'B',
 }
 
 /**
  * Lado preferido do jogador
  *
- * - LEFT: Jogadores que preferem atuar no lado esquerdo do campo.
- * - RIGHT: Jogadores que preferem atuar no lado direito do campo.
- * - CENTER: Jogadores que preferem atuar em posições centrais no campo.
- * - BOTH: Jogadores que se sentem confortáveis atuando em qualquer lado do campo.
+ * @enum {string}
  */
 export enum PlayerSide {
+  /** Jogadores que preferem atuar no lado esquerdo do campo. */
   LEFT = 'L',
+  /** Jogadores que preferem atuar no lado direito do campo. */
   RIGHT = 'R',
+  /** Jogadores que preferem atuar em posições centrais no campo. */
   CENTER = 'C',
+  /** Jogadores que se sentem confortáveis atuando em qualquer lado do campo. */
   BOTH = 'B',
 }
 
 /**
  * Habilidades especiais do jogador
  *
- * - FREE_KICK_SPECIALIST: Especialista em cobranças de falta ou situações de bola parada. - ex.: Lionel Messi
- * - PENALTY_SPECIALIST: Especialista em cobranças de pênalti. - ex.: Cristiano Ronaldo
- * - PENALTY_DEFENDER: Especialista em defender cobranças de pênalti. - ex.: Fábio
- * - ASSIST_SPECIALIST: Especialista em criar oportunidades de gol para companheiros de equipe através de passes precisos e visão de jogo. - ex.: Kevin De Bruyne
- * - GOALSCORER: Especialista em marcar gols, frequentemente liderando a tabela de artilheiros do clube. - ex.: Robert Lewandowski
+ * @enum {string}
  */
 export enum PlayerSpecialSkill {
+  /** Especialista em cobranças de falta ou situações de bola parada. - ex.: Lionel Messi */
   FREE_KICK_SPECIALIST = 'FREE_KICK_SPECIALIST',
+  /** Especialista em cobranças de pênalti. - ex.: Cristiano Ronaldo */
   PENALTY_SPECIALIST = 'PENALTY_SPECIALIST',
+  /** Especialista em defender cobranças de pênalti. - ex.: Fábio */
   PENALTY_DEFENDER = 'PENALTY_DEFENDER',
+  /** Especialista em criar oportunidades de gol para companheiros de equipe através de passes precisos e visão de jogo. - ex.: Kevin De Bruyne */
   ASSIST_SPECIALIST = 'ASSIST_SPECIALIST',
+  /** Especialista em marcar gols, frequentemente liderando a tabela de artilheiros do clube. - ex.: Robert Lewandowski */
   GOALSCORER = 'GOALSCORER',
 }
