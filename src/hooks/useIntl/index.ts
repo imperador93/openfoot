@@ -6,13 +6,13 @@ import { useLocaleStore } from '@/stores/LocaleStore'
 type FormatValues = Record<string, string | number>
 
 /**
- * Typed wrapper around react-intl's `useIntl`.
+ * Wrapper tipado em torno do `useIntl` do react-intl.
  *
- * - `t(id)` — statically-typed key with full autocomplete.
- * - `td(id)` — escape hatch for dynamically-built keys (e.g. enum lookups).
- *    Prefer `t()` whenever possible; use `td()` only when the key is built at runtime.
- * - `locale` — current active locale.
- * - `setLocale(locale)` — switch locale (persisted to localStorage).
+ * - `t(id)` — chave tipada estaticamente com autocomplete completo.
+ * - `td(id)` — escape hatch para chaves construídas dinamicamente (ex: enum lookups).
+ *    Prefira `t()` sempre que possível; use `td()` apenas quando a chave é construída em tempo de execução.
+ * - `locale` — local ativo atual.
+ * - `setLocale(locale)` — alternar local (persistido no localStorage).
  */
 export function useIntl() {
   const intl = vanillaUseIntl()

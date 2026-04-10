@@ -1,9 +1,10 @@
 /**
- * Receive an nested object and return a new object with all nested properties flattened into a single level, using dot notation for the keys.
+ * Recebe um objeto aninhado e retorna um novo objeto com todas as propriedades
+ * aninhadas achatadas em um único nível, usando notação de ponto para as chaves.
  *
- * @param obj The object to flatten
- * @param parentKey The base key to use for the current level of recursion (used internally)
- * @returns A new object with all nested properties flattened
+ * @param obj O objeto a ser achatado
+ * @param parentKey A chave base a ser usada para o nível atual de recursão (usado internamente)
+ * @returns Um novo objeto com todas as propriedades aninhadas achatadas
  */
 export const flattenObject = <T extends Record<string, unknown>>(
   obj: T,

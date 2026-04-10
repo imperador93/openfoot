@@ -12,14 +12,15 @@ interface LocaleState {
 }
 
 /**
- * Resolves the initial locale synchronously (no flicker):
- * 1. localStorage (user's saved preference)
- * 2. navigator.language (browser default)
+ * Resolve o locale inicial de forma síncrona (sem flicker):
+ * 1. localStorage (preferência salva do usuário)
+ * 2. navigator.language (padrão do navegador)
  * 3. pt-BR (fallback)
  */
-function getInitialLocale(): SupportedLocale {
+const getInitialLocale = (): SupportedLocale => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
+
     if (stored) {
       const parsed = JSON.parse(stored) as { state?: { locale?: string } }
       if (parsed.state?.locale) {
@@ -27,7 +28,7 @@ function getInitialLocale(): SupportedLocale {
       }
     }
   } catch {
-    // Corrupted or unavailable localStorage — fall through
+    // LocalStorage corrompido ou indisponível — continuar para resolver via navigator.language
   }
 
   return resolveLocale(navigator.language)
