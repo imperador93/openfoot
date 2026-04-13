@@ -15,7 +15,7 @@ use game_engine::{
     CareerState,
     SimulateRoundResultDto,
 };
-use models::League;
+use models::{League, SavedLineup, SlotZone, Tactics};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::State;
@@ -23,7 +23,7 @@ use tauri::State;
 pub struct AppState {
     pub leagues: Mutex<Option<HashMap<String, League>>>,
     pub career: Mutex<Option<CareerState>>,
-    pub lineup: Mutex<Vec<String>>,
+    pub lineup: Mutex<Option<SavedLineup>>,
 }
 
 fn ensure_leagues_loaded(cache: &mut Option<HashMap<String, League>>) -> Result<(), String> {
@@ -100,14 +100,36 @@ fn start_new_career_multi(
 }
 
 #[tauri::command]
-fn simulate_career_round(state: State<AppState>) -> Result<SimulateRoundResultDto, String> {
-    let lineup = state.lineup.lock().unwrap().clone();
+fn simulate_career_round(
+    formation: String,
+    play_style: String,
+    state: State<AppState>,
+) -> Result<SimulateRoundResultDto, String> {
+    let tactics: Tactics = serde_json::from_str(&format!(
+        r#"{{"formation":"{}","playStyle":"{}"}}"#,
+        formation, play_style
+    ))
+    .map_err(|e| format!("Tatica invalida: {}", e))?;
+
+    let lineup = state
+        .lineup
+        .lock()
+        .unwrap()
+        .clone()
+        .ok_or_else(|| "Nenhuma escalacao salva. Monte o elenco e salve novamente.".to_string())?;
+    if lineup.starters.len() < 7 {
+        return Err(
+            "Minimo de 7 jogadores para simular. Escale pelo menos 7 no menu Escalacao."
+                .to_string(),
+        );
+    }
+
     let mut career_guard = state.career.lock().unwrap();
     let career = career_guard
         .as_mut()
         .ok_or_else(|| "Nenhuma carreira iniciada".to_string())?;
 
-    simulate_next_round(career, &lineup)
+    simulate_next_round(career, &lineup, tactics)
 }
 
 #[tauri::command]
@@ -121,20 +143,62 @@ fn get_career_snapshot(state: State<AppState>) -> Result<CareerSnapshotDto, Stri
 }
 
 #[tauri::command]
-fn save_lineup(player_ids: Vec<String>, state: State<AppState>) -> Result<(), String> {
-    if player_ids.len() > 11 {
+fn save_lineup(lineup: SavedLineup, state: State<AppState>) -> Result<(), String> {
+    if lineup.starters.len() > 11 {
         return Err("Escalacao invalida: maximo de 11 titulares".to_string());
     }
+    if lineup.starters.len() < 7 {
+        return Err("Escalacao invalida: minimo de 7 titulares".to_string());
+    }
+    if lineup.bench.len() > 7 {
+        return Err("Escalacao invalida: maximo de 7 reservas".to_string());
+    }
+    if lineup.starters.len() + lineup.bench.len() > 18 {
+        return Err("Escalacao invalida: maximo de 18 jogadores (11 titulares + 7 reservas)".to_string());
+    }
 
-    let mut lineup = state.lineup.lock().unwrap();
-    *lineup = player_ids;
+    if !lineup
+        .starters
+        .iter()
+        .any(|slot| matches!(slot.slot_zone, SlotZone::Gol))
+    {
+        return Err("Escalacao invalida: slot de goleiro precisa estar preenchido".to_string());
+    }
+
+    let mut unique_players = std::collections::HashSet::new();
+    let mut used_slot_indexes = std::collections::HashSet::new();
+    for slot in &lineup.starters {
+        if slot.player_id.trim().is_empty() {
+            return Err("Escalacao invalida: titular com playerId vazio".to_string());
+        }
+        if usize::from(slot.slot_index) >= 11 {
+            return Err("Escalacao invalida: slotIndex de titular fora do intervalo".to_string());
+        }
+        if !used_slot_indexes.insert(slot.slot_index) {
+            return Err("Escalacao invalida: slotIndex de titular duplicado".to_string());
+        }
+        if !unique_players.insert(slot.player_id.to_lowercase()) {
+            return Err("Escalacao invalida: jogador duplicado entre titulares/reservas".to_string());
+        }
+    }
+    for bench_id in &lineup.bench {
+        if bench_id.trim().is_empty() {
+            return Err("Escalacao invalida: reserva com playerId vazio".to_string());
+        }
+        if !unique_players.insert(bench_id.to_lowercase()) {
+            return Err("Escalacao invalida: jogador duplicado entre titulares/reservas".to_string());
+        }
+    }
+
+    let mut lineup_guard = state.lineup.lock().unwrap();
+    *lineup_guard = Some(lineup);
     Ok(())
 }
 
 #[tauri::command]
-fn get_lineup(state: State<AppState>) -> Result<Vec<String>, String> {
+fn get_lineup(state: State<AppState>) -> Result<SavedLineup, String> {
     let lineup = state.lineup.lock().unwrap();
-    Ok(lineup.clone())
+    Ok(lineup.clone().unwrap_or_default())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -143,7 +207,7 @@ pub fn run() {
         .manage(AppState {
             leagues: Mutex::new(None),
             career: Mutex::new(None),
-            lineup: Mutex::new(Vec::new()),
+            lineup: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             fetch_leagues,

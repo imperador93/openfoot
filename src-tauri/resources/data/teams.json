@@ -13,7 +13,8 @@
         "Overall": 69,
         "Experience": 36,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Athletico-PR"
     },
     {
       "Id": "atletico-mg",
@@ -28,7 +29,8 @@
         "Overall": 67,
         "Experience": 10,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Atlético-MG"
     },
     {
       "Id": "bahia",
@@ -43,7 +45,8 @@
         "Overall": 80,
         "Experience": 18,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Bahia"
     },
     {
       "Id": "botafogo",
@@ -58,7 +61,8 @@
         "Overall": 66,
         "Experience": 10,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Botafogo"
     },
     {
       "Id": "ceara",
@@ -73,7 +77,8 @@
         "Overall": 69,
         "Experience": 19,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Ceará"
     },
     {
       "Id": "corinthians",
@@ -88,7 +93,8 @@
         "Overall": 76,
         "Experience": 35,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Corinthians"
     },
     {
       "Id": "criciuma",
@@ -103,7 +109,8 @@
         "Overall": 89,
         "Experience": 16,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Criciúma"
     },
     {
       "Id": "cruzeiro",
@@ -118,7 +125,8 @@
         "Overall": 87,
         "Experience": 24,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Cruzeiro"
     },
     {
       "Id": "cuiaba",
@@ -133,7 +141,8 @@
         "Overall": 91,
         "Experience": 15,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Cuiabá"
     },
     {
       "Id": "flamengo",
@@ -148,7 +157,8 @@
         "Overall": 68,
         "Experience": 35,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Flamengo"
     },
     {
       "Id": "fluminense",
@@ -163,7 +173,8 @@
         "Overall": 70,
         "Experience": 20,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Fluminense"
     },
     {
       "Id": "fortaleza",
@@ -178,7 +189,8 @@
         "Overall": 73,
         "Experience": 18,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Fortaleza"
     },
     {
       "Id": "gremio",
@@ -193,7 +205,8 @@
         "Overall": 83,
         "Experience": 37,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Grêmio"
     },
     {
       "Id": "internacional",
@@ -208,7 +221,8 @@
         "Overall": 66,
         "Experience": 20,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Internacional"
     },
     {
       "Id": "juventude",
@@ -223,7 +237,8 @@
         "Overall": 84,
         "Experience": 23,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Juventude"
     },
     {
       "Id": "palmeiras",
@@ -238,7 +253,8 @@
         "Overall": 87,
         "Experience": 33,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Palmeiras"
     },
     {
       "Id": "red-bull-bragantino",
@@ -253,7 +269,8 @@
         "Overall": 70,
         "Experience": 32,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Red Bull Bragantino"
     },
     {
       "Id": "sao-paulo",
@@ -268,7 +285,8 @@
         "Overall": 76,
         "Experience": 25,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do São Paulo"
     },
     {
       "Id": "vasco",
@@ -283,7 +301,8 @@
         "Overall": 73,
         "Experience": 33,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Vasco"
     },
     {
       "Id": "vitoria",
@@ -298,7 +317,8 @@
         "Overall": 82,
         "Experience": 21,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Vitória"
     },
     {
       "Id": "america-mg",
@@ -313,7 +333,8 @@
         "Overall": 87,
         "Experience": 11,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do América-MG"
     },
     {
       "Id": "atletico-go",
@@ -328,7 +349,8 @@
         "Overall": 80,
         "Experience": 40,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Atlético-GO"
     },
     {
       "Id": "goias",
@@ -343,7 +365,8 @@
         "Overall": 80,
         "Experience": 15,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Goiás"
     },
     {
       "Id": "santos",
@@ -358,7 +381,8 @@
         "Overall": 86,
         "Experience": 10,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Santos"
     },
     {
       "Id": "avai",
@@ -373,7 +397,8 @@
         "Overall": 92,
         "Experience": 27,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Avaí"
     },
     {
       "Id": "cebolinha",
@@ -388,7 +413,8 @@
         "Overall": 77,
         "Experience": 19,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Cebolinha"
     },
     {
       "Id": "novorizontino",
@@ -403,7 +429,8 @@
         "Overall": 78,
         "Experience": 29,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Novorizontino"
     },
     {
       "Id": "vila-nova",
@@ -418,7 +445,8 @@
         "Overall": 75,
         "Experience": 12,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Vila Nova"
     },
     {
       "Id": "ponte-preta",
@@ -433,7 +461,8 @@
         "Overall": 83,
         "Experience": 19,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Ponte Preta"
     },
     {
       "Id": "abc",
@@ -448,7 +477,8 @@
         "Overall": 67,
         "Experience": 38,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do ABC"
     },
     {
       "Id": "mirassol",
@@ -463,7 +493,8 @@
         "Overall": 89,
         "Experience": 40,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Mirassol"
     },
     {
       "Id": "nautico",
@@ -478,7 +509,8 @@
         "Overall": 87,
         "Experience": 19,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Náutico"
     },
     {
       "Id": "paysandu",
@@ -493,7 +525,8 @@
         "Overall": 66,
         "Experience": 21,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Paysandu"
     },
     {
       "Id": "crb",
@@ -508,7 +541,8 @@
         "Overall": 88,
         "Experience": 23,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do CRB"
     },
     {
       "Id": "botafogo-rp",
@@ -523,7 +557,8 @@
         "Overall": 92,
         "Experience": 27,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Botafogo de Ribeirão Preto"
     },
     {
       "Id": "operario",
@@ -538,7 +573,8 @@
         "Overall": 75,
         "Experience": 17,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Operário"
     },
     {
       "Id": "sampaio-correa",
@@ -553,7 +589,8 @@
         "Overall": 81,
         "Experience": 17,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Sampaio Corrêa"
     },
     {
       "Id": "guarani",
@@ -568,7 +605,8 @@
         "Overall": 74,
         "Experience": 18,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Guarani"
     },
     {
       "Id": "amazonas",
@@ -583,7 +621,8 @@
         "Overall": 90,
         "Experience": 14,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Amazonas"
     },
     {
       "Id": "santa-cruz",
@@ -598,7 +637,8 @@
         "Overall": 84,
         "Experience": 24,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Santa Cruz"
     },
     {
       "Id": "chapecoense-b",
@@ -613,7 +653,8 @@
         "Overall": 90,
         "Experience": 15,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Chapecoense"
     },
     {
       "Id": "ituano",
@@ -628,7 +669,8 @@
         "Overall": 73,
         "Experience": 30,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Ituano"
     },
     {
       "Id": "jacuipense",
@@ -643,7 +685,8 @@
         "Overall": 87,
         "Experience": 34,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Jacuipense"
     },
     {
       "Id": "tombense",
@@ -658,7 +701,8 @@
         "Overall": 88,
         "Experience": 31,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Tombense"
     },
     {
       "Id": "real-madrid",
@@ -673,7 +717,8 @@
         "Overall": 73,
         "Experience": 25,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Real Madrid"
     },
     {
       "Id": "barcelona",
@@ -688,7 +733,8 @@
         "Overall": 67,
         "Experience": 13,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Barcelona"
     },
     {
       "Id": "atletico-madrid",
@@ -703,7 +749,8 @@
         "Overall": 65,
         "Experience": 25,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Atlético Madrid"
     },
     {
       "Id": "sevilla",
@@ -718,7 +765,8 @@
         "Overall": 83,
         "Experience": 32,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Sevilla"
     },
     {
       "Id": "real-sociedad",
@@ -733,7 +781,8 @@
         "Overall": 87,
         "Experience": 26,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Real Sociedad"
     },
     {
       "Id": "villarreal",
@@ -748,7 +797,8 @@
         "Overall": 79,
         "Experience": 10,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Villarreal"
     },
     {
       "Id": "athletic-bilbao",
@@ -763,7 +813,8 @@
         "Overall": 90,
         "Experience": 25,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Athletic Bilbao"
     },
     {
       "Id": "valencia",
@@ -778,7 +829,8 @@
         "Overall": 73,
         "Experience": 25,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Valencia"
     },
     {
       "Id": "la-real",
@@ -793,7 +845,8 @@
         "Overall": 66,
         "Experience": 14,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do La Real"
     },
     {
       "Id": "real-betis",
@@ -808,7 +861,8 @@
         "Overall": 82,
         "Experience": 14,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Real Betis"
     },
     {
       "Id": "getafe",
@@ -823,7 +877,8 @@
         "Overall": 91,
         "Experience": 31,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Getafe"
     },
     {
       "Id": "rayo-vallecano",
@@ -838,7 +893,8 @@
         "Overall": 90,
         "Experience": 34,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Rayo Vallecano"
     },
     {
       "Id": "mallorca",
@@ -853,7 +909,8 @@
         "Overall": 85,
         "Experience": 31,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Mallorca"
     },
     {
       "Id": "real-valladolid",
@@ -868,7 +925,8 @@
         "Overall": 65,
         "Experience": 33,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Real Valladolid"
     },
     {
       "Id": "osasuna",
@@ -883,7 +941,8 @@
         "Overall": 65,
         "Experience": 24,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Osasuna"
     },
     {
       "Id": "girona",
@@ -898,7 +957,8 @@
         "Overall": 72,
         "Experience": 39,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Girona"
     },
     {
       "Id": "celta-vigo",
@@ -913,7 +973,8 @@
         "Overall": 90,
         "Experience": 23,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Celta Vigo"
     },
     {
       "Id": "alaves",
@@ -928,7 +989,8 @@
         "Overall": 76,
         "Experience": 12,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Alavés"
     },
     {
       "Id": "las-palmas",
@@ -943,7 +1005,8 @@
         "Overall": 70,
         "Experience": 14,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Las Palmas"
     },
     {
       "Id": "espanyol",
@@ -958,7 +1021,8 @@
         "Overall": 69,
         "Experience": 32,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do RCD Espanyol"
     },
     {
       "Id": "sporting-gijon",
@@ -973,7 +1037,8 @@
         "Overall": 73,
         "Experience": 12,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Sporting Gijón"
     },
     {
       "Id": "zaragoza",
@@ -988,7 +1053,8 @@
         "Overall": 76,
         "Experience": 35,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Zaragoza"
     },
     {
       "Id": "levante",
@@ -1003,7 +1069,8 @@
         "Overall": 65,
         "Experience": 26,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Levante"
     },
     {
       "Id": "tenerife",
@@ -1018,7 +1085,8 @@
         "Overall": 73,
         "Experience": 13,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Tenerife"
     },
     {
       "Id": "almeria",
@@ -1033,7 +1101,8 @@
         "Overall": 71,
         "Experience": 10,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Almería"
     },
     {
       "Id": "mirandes",
@@ -1048,7 +1117,8 @@
         "Overall": 92,
         "Experience": 33,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Mirandés"
     },
     {
       "Id": "elche",
@@ -1063,7 +1133,8 @@
         "Overall": 92,
         "Experience": 26,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Elche"
     },
     {
       "Id": "cadiz",
@@ -1078,7 +1149,8 @@
         "Overall": 69,
         "Experience": 28,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Cádiz"
     },
     {
       "Id": "ponferradina",
@@ -1093,7 +1165,8 @@
         "Overall": 65,
         "Experience": 33,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Ponferradina"
     },
     {
       "Id": "huesca",
@@ -1108,7 +1181,8 @@
         "Overall": 84,
         "Experience": 25,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Huesca"
     },
     {
       "Id": "oviedo",
@@ -1123,7 +1197,8 @@
         "Overall": 65,
         "Experience": 14,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Real Oviedo"
     },
     {
       "Id": "malaga",
@@ -1138,7 +1213,8 @@
         "Overall": 72,
         "Experience": 23,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Málaga"
     },
     {
       "Id": "cordoba",
@@ -1153,7 +1229,8 @@
         "Overall": 91,
         "Experience": 32,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Córdoba"
     },
     {
       "Id": "sabadell",
@@ -1168,7 +1245,8 @@
         "Overall": 71,
         "Experience": 38,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Sabadell"
     },
     {
       "Id": "cartagena",
@@ -1183,7 +1261,8 @@
         "Overall": 67,
         "Experience": 35,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Cartagena"
     },
     {
       "Id": "castellon",
@@ -1198,7 +1277,8 @@
         "Overall": 79,
         "Experience": 33,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Castellón"
     },
     {
       "Id": "alcorcon",
@@ -1213,7 +1293,8 @@
         "Overall": 78,
         "Experience": 26,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Alcorcón"
     },
     {
       "Id": "albacete",
@@ -1228,7 +1309,8 @@
         "Overall": 73,
         "Experience": 21,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Albacete"
     },
     {
       "Id": "teruel",
@@ -1243,7 +1325,8 @@
         "Overall": 66,
         "Experience": 27,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Teruel"
     },
     {
       "Id": "logrones",
@@ -1258,7 +1341,8 @@
         "Overall": 69,
         "Experience": 30,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Logroñés"
     },
     {
       "Id": "zaf-kaizer-chiefs",
@@ -1273,7 +1357,8 @@
         "Overall": 92,
         "Experience": 38,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Kaizer Chiefs"
     },
     {
       "Id": "zaf-orlando-pirates",
@@ -1288,7 +1373,8 @@
         "Overall": 65,
         "Experience": 37,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Orlando Pirates"
     },
     {
       "Id": "zaf-mamelodi-sundowns",
@@ -1303,7 +1389,8 @@
         "Overall": 65,
         "Experience": 36,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Mamelodi Sundowns"
     },
     {
       "Id": "zaf-cape-town-city",
@@ -1318,7 +1405,8 @@
         "Overall": 71,
         "Experience": 27,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Cape Town City"
     },
     {
       "Id": "zaf-supersport-united",
@@ -1333,7 +1421,8 @@
         "Overall": 84,
         "Experience": 32,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do SuperSport United"
     },
     {
       "Id": "zaf-amazulu",
@@ -1348,7 +1437,8 @@
         "Overall": 87,
         "Experience": 33,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do AmaZulu"
     },
     {
       "Id": "zaf-stellenbosch",
@@ -1363,7 +1453,8 @@
         "Overall": 87,
         "Experience": 28,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Stellenbosch"
     },
     {
       "Id": "zaf-chippa-united",
@@ -1378,7 +1469,8 @@
         "Overall": 84,
         "Experience": 13,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Chippa United"
     },
     {
       "Id": "zaf-sekhukhune",
@@ -1393,7 +1485,8 @@
         "Overall": 77,
         "Experience": 13,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Sekhukhune United"
     },
     {
       "Id": "zaf-richards-bay",
@@ -1408,7 +1501,8 @@
         "Overall": 84,
         "Experience": 26,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Richards Bay"
     },
     {
       "Id": "zaf-ts-galaxy",
@@ -1423,7 +1517,8 @@
         "Overall": 89,
         "Experience": 40,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do TS Galaxy"
     },
     {
       "Id": "zaf-golden-arrows",
@@ -1438,7 +1533,8 @@
         "Overall": 75,
         "Experience": 40,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Golden Arrows"
     },
     {
       "Id": "zaf-moroka-swallows",
@@ -1453,7 +1549,8 @@
         "Overall": 65,
         "Experience": 22,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Moroka Swallows"
     },
     {
       "Id": "zaf-polokwane",
@@ -1468,7 +1565,8 @@
         "Overall": 84,
         "Experience": 38,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Polokwane City"
     },
     {
       "Id": "zaf-cape-town-spurs",
@@ -1483,7 +1581,8 @@
         "Overall": 73,
         "Experience": 39,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Cape Town Spurs"
     },
     {
       "Id": "zaf-marumo-gallants",
@@ -1498,7 +1597,8 @@
         "Overall": 84,
         "Experience": 36,
         "Tactics": "3-4-3"
-      }
+      },
+      "Stadium": "Estadio do Marumo Gallants"
     },
     {
       "Id": "zaf-royal-am",
@@ -1513,7 +1613,8 @@
         "Overall": 68,
         "Experience": 37,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Royal AM"
     },
     {
       "Id": "zaf-baroka",
@@ -1528,7 +1629,8 @@
         "Overall": 84,
         "Experience": 20,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Baroka FC"
     },
     {
       "Id": "zaf-black-leopards",
@@ -1543,7 +1645,8 @@
         "Overall": 74,
         "Experience": 18,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Black Leopards"
     },
     {
       "Id": "zaf-platinum-stars",
@@ -1558,7 +1661,8 @@
         "Overall": 86,
         "Experience": 14,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Platinum Stars"
     },
     {
       "Id": "sau-al-hilal",
@@ -1573,7 +1677,8 @@
         "Overall": 66,
         "Experience": 13,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Hilal"
     },
     {
       "Id": "sau-al-nassr",
@@ -1588,7 +1693,8 @@
         "Overall": 81,
         "Experience": 27,
         "Tactics": "4-4-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Nassr"
     },
     {
       "Id": "sau-al-ittihad",
@@ -1603,7 +1709,8 @@
         "Overall": 66,
         "Experience": 21,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Ittihad"
     },
     {
       "Id": "sau-al-ahli",
@@ -1618,7 +1725,8 @@
         "Overall": 71,
         "Experience": 31,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Al-Ahli"
     },
     {
       "Id": "sau-al-shabab",
@@ -1633,7 +1741,8 @@
         "Overall": 92,
         "Experience": 14,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Shabab"
     },
     {
       "Id": "sau-al-qadsiah",
@@ -1648,7 +1757,8 @@
         "Overall": 66,
         "Experience": 25,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Al-Qadsiah"
     },
     {
       "Id": "sau-al-taawoun",
@@ -1663,7 +1773,8 @@
         "Overall": 72,
         "Experience": 23,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Al-Taawoun"
     },
     {
       "Id": "sau-al-fayha",
@@ -1678,7 +1789,8 @@
         "Overall": 82,
         "Experience": 17,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Al-Fayha"
     },
     {
       "Id": "sau-al-ettifaq",
@@ -1693,7 +1805,8 @@
         "Overall": 81,
         "Experience": 23,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Al-Ettifaq"
     },
     {
       "Id": "sau-al-wehda",
@@ -1708,7 +1821,8 @@
         "Overall": 85,
         "Experience": 39,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Wehda"
     },
     {
       "Id": "sau-al-fateh",
@@ -1723,7 +1837,8 @@
         "Overall": 68,
         "Experience": 40,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Fateh"
     },
     {
       "Id": "sau-al-hazem",
@@ -1738,7 +1853,8 @@
         "Overall": 84,
         "Experience": 20,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Hazem"
     },
     {
       "Id": "sau-al-okhdood",
@@ -1753,7 +1869,8 @@
         "Overall": 70,
         "Experience": 40,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Okhdood"
     },
     {
       "Id": "sau-damac",
@@ -1768,7 +1885,8 @@
         "Overall": 76,
         "Experience": 20,
         "Tactics": "4-3-3"
-      }
+      },
+      "Stadium": "Estadio do Damac"
     },
     {
       "Id": "sau-al-riyadh",
@@ -1783,7 +1901,8 @@
         "Overall": 92,
         "Experience": 23,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Al-Riyadh"
     },
     {
       "Id": "sau-abha",
@@ -1798,7 +1917,8 @@
         "Overall": 73,
         "Experience": 37,
         "Tactics": "5-4-1"
-      }
+      },
+      "Stadium": "Estadio do Abha Club"
     },
     {
       "Id": "sau-al-khaleej",
@@ -1813,7 +1933,8 @@
         "Overall": 86,
         "Experience": 36,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Khaleej"
     },
     {
       "Id": "sau-al-tai",
@@ -1828,7 +1949,8 @@
         "Overall": 76,
         "Experience": 38,
         "Tactics": "4-5-1"
-      }
+      },
+      "Stadium": "Estadio do Al-Tai"
     },
     {
       "Id": "sau-al-raed",
@@ -1843,7 +1965,8 @@
         "Overall": 74,
         "Experience": 11,
         "Tactics": "5-3-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Raed"
     },
     {
       "Id": "sau-al-orubah",
@@ -1858,7 +1981,8 @@
         "Overall": 87,
         "Experience": 24,
         "Tactics": "3-5-2"
-      }
+      },
+      "Stadium": "Estadio do Al-Orubah"
     }
   ]
 }

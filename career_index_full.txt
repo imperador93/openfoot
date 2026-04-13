@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   fetchLeague,
@@ -9,9 +9,7 @@ import {
   type CareerSnapshot,
   type MatchEvent,
   type RoundMatch,
-  type SavedLineup,
   type SimulateRoundResult,
-  type SlotZone as ApiSlotZone,
   type SquadPlayer,
 } from '@/libs/tauri/career'
 
@@ -66,12 +64,12 @@ type MenuItem = {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { key: 'partida', label: 'Partida', icon: '▶' },
-  { key: 'escalacao', label: 'Elenco', icon: '👥' },
-  { key: null, label: 'Calendario', icon: '📅', comingSoon: true },
-  { key: null, label: 'Transferencias', icon: '💸', comingSoon: true },
-  { key: null, label: 'Departamentos', icon: '🏢', comingSoon: true },
-  { key: null, label: 'Estatisticas', icon: '📊', comingSoon: true },
+  { key: 'partida', label: 'Partida', icon: 'â–¶' },
+  { key: 'escalacao', label: 'Elenco', icon: 'ðŸ‘¥' },
+  { key: null, label: 'Calendario', icon: 'ðŸ“…', comingSoon: true },
+  { key: null, label: 'Transferencias', icon: 'ðŸ’¸', comingSoon: true },
+  { key: null, label: 'Departamentos', icon: 'ðŸ¢', comingSoon: true },
+  { key: null, label: 'Estatisticas', icon: 'ðŸ“Š', comingSoon: true },
 ]
 
 const computeOvr = (player: SquadPlayer) => {
@@ -91,10 +89,6 @@ type SlotZone = 'GOL' | 'DEF' | 'MEI' | 'ATA'
 
 type FieldSlot = {
   zone: SlotZone
-  playerId: string | null
-}
-
-type BenchSlot = {
   playerId: string | null
 }
 
@@ -140,34 +134,11 @@ const FORMATION_SLOTS: Record<Formation, SlotZone[]> = {
   '3-4-3': ['GOL', 'DEF', 'DEF', 'DEF', 'MEI', 'MEI', 'MEI', 'MEI', 'ATA', 'ATA', 'ATA'],
 }
 
-const BENCH_SLOT_COUNT = 7
-
-const emptyBenchSlots = (): BenchSlot[] =>
-  Array.from({ length: BENCH_SLOT_COUNT }, () => ({ playerId: null }))
-
-const buildBenchSlotsWithIds = (ids: string[]): BenchSlot[] =>
-  Array.from({ length: BENCH_SLOT_COUNT }, (_, i) => ({
-    playerId: ids[i] ?? null,
-  }))
-
 const buildSlotsWithLineup = (formation: Formation, lineupIds: string[]): FieldSlot[] =>
   FORMATION_SLOTS[formation].map((zone, i) => ({
     zone,
     playerId: lineupIds[i] ?? null,
   }))
-
-const buildSlotsWithSavedLineup = (formation: Formation, saved: SavedLineup): FieldSlot[] => {
-  const next = buildSlotsWithLineup(formation, [])
-  for (const starter of saved.starters) {
-    const idx = starter.slotIndex
-    if (idx < 0 || idx >= next.length) continue
-    next[idx] = {
-      ...next[idx],
-      playerId: starter.playerId,
-    }
-  }
-  return next
-}
 
 const Career = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('partida')
@@ -197,20 +168,19 @@ const Career = () => {
   const [savedSlots, setSavedSlots] = useState<FieldSlot[]>([])
   const [isDirty, setIsDirty] = useState(false)
   const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>(null)
-  const [dragSource, setDragSource] = useState<{ type: 'slot' | 'bench' | 'list'; idx: number; playerId: string } | null>(null)
-  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragPayload, setDragPayload] = useState<{ slotIdx: number; playerId: string | null } | null>(null)
+  const [dragCursor, setDragCursor] = useState<{ x: number; y: number } | null>(null)
   const [subsUsed, setSubsUsed] = useState(0)
   const [subWindowsUsed, setSubWindowsUsed] = useState(0)
   const [subsInCurrentPause, setSubsInCurrentPause] = useState(0)
   const [subOutSlotIdx, setSubOutSlotIdx] = useState<number | null>(null)
   const [subInPlayerId, setSubInPlayerId] = useState('')
   const [recentSubstitution, setRecentSubstitution] = useState<RecentSubstitution | null>(null)
-  const [benchSlots, setBenchSlots] = useState<BenchSlot[]>(() => emptyBenchSlots())
+  const [benchSelectionIds, setBenchSelectionIds] = useState<string[]>([])
 
   const pendingResult = useRef<SimulateRoundResult | null>(null)
   const justDroppedRef = useRef(false)
-  const slotRefs = useRef<Map<number, HTMLElement>>(new Map())
-  const benchRefs = useRef<Map<number, HTMLElement>>(new Map())
 
   const titularesCount = useMemo(
     () => slots.filter((slot) => slot.playerId !== null).length,
@@ -227,7 +197,10 @@ const Career = () => {
     }))
   }, [slots])
 
-
+  const dragPreviewPlayer = useMemo(() => {
+    if (!dragPayload?.playerId) return null
+    return squad.find((p) => p.id === dragPayload.playerId) ?? null
+  }, [dragPayload, squad])
 
   useEffect(() => {
     const loadCareer = async () => {
@@ -241,26 +214,20 @@ const Career = () => {
         const playerTeam = league.teams.find((team) => team.id === cached.playerTeamId)
 
         if (playerTeam) {
-          const savedLineup = await getLineup().catch(() => ({
-            starters: [],
-            bench: [],
-          }))
-          const loadedSlots = buildSlotsWithSavedLineup(formation, savedLineup)
+          const savedLineup = await getLineup().catch(() => [])
+          const loadedSlots = buildSlotsWithLineup(formation, savedLineup)
           const orderedSquad = [...playerTeam.squad]
             .map((player) => ({ ...player, status: 'Reserva' as SquadStatus }))
             .sort((a, b) => computeOvr(b) - computeOvr(a))
-          const starterIds = new Set(
-            loadedSlots
-              .map((slot) => slot.playerId)
-              .filter((id): id is string => id !== null)
-          )
-          const benchFromSave = savedLineup.bench
-            .filter((id) => !starterIds.has(id))
+          const defaultBench = orderedSquad
+            .filter((player) => !loadedSlots.some((slot) => slot.playerId === player.id))
+            .slice(0, 0)
+            .map((player) => player.id)
 
           setSquad(orderedSquad)
           setSlots(loadedSlots)
           setSavedSlots(loadedSlots.map((slot) => ({ ...slot })))
-          setBenchSlots(buildBenchSlotsWithIds(benchFromSave))
+          setBenchSelectionIds(defaultBench)
           setIsDirty(false)
         }
 
@@ -348,18 +315,9 @@ const Career = () => {
     const titularIds = new Set(slots.map((slot) => slot.playerId).filter((id): id is string => id !== null))
     const squadIds = new Set(squad.map((player) => player.id))
 
-    setBenchSlots((current) => {
-      const used = new Set<string>()
-      const sanitizedIds = current
-        .map((slot) => slot.playerId)
-        .filter((id): id is string => {
-          if (!id) return false
-          if (!squadIds.has(id) || titularIds.has(id) || used.has(id)) return false
-          used.add(id)
-          return true
-        })
-
-      return buildBenchSlotsWithIds(sanitizedIds)
+    setBenchSelectionIds((current) => {
+      const filtered = current.filter((id) => squadIds.has(id) && !titularIds.has(id))
+      return filtered.length > 7 ? filtered.slice(0, 7) : filtered
     })
   }, [slots, squad])
 
@@ -452,25 +410,16 @@ const Career = () => {
     setStatus(`Substituicao feita (${subsUsed + 1}/5 atletas, ${nextWindowCount}/3 janelas).`)
   }
 
-  const applyBenchDrop = (targetIdx: number, playerId: string | null) => {
-    if (!playerId) return
-    if (!squad.some((player) => player.id === playerId)) return
-
-    setSlots((curr) =>
-      curr.map((slot) =>
-        slot.playerId === playerId ? { ...slot, playerId: null } : slot
-      )
-    )
-
-    setBenchSlots((curr) => {
-      const next = curr.map((slot) => ({ ...slot }))
-      for (let i = 0; i < next.length; i += 1) {
-        if (next[i].playerId === playerId) {
-          next[i].playerId = null
-        }
+  const handleToggleBenchPlayer = (playerId: string) => {
+    setBenchSelectionIds((current) => {
+      if (current.includes(playerId)) {
+        return current.filter((id) => id !== playerId)
       }
-      next[targetIdx] = { playerId }
-      return next
+      if (current.length >= 7) {
+        setStatus('Banco cheio: escolha no maximo 7 atletas elegiveis.')
+        return current
+      }
+      return [...current, playerId]
     })
   }
 
@@ -542,7 +491,7 @@ const Career = () => {
     setSelectedSlotIdx(null)
     setSubOutSlotIdx(null)
     setSubInPlayerId('')
-    setBenchSlots(buildBenchSlotsWithIds(reserveIds))
+    setBenchSelectionIds(reserveIds)
 
     if (!hasGoalkeeper) {
       setStatus(`Escalacao automatica aplicada (titulares + banco ${reserveIds.length}/7). Sem goleiro no elenco: preencha manualmente o slot GOL.`)
@@ -557,7 +506,7 @@ const Career = () => {
     setSelectedSlotIdx(null)
     setSubOutSlotIdx(null)
     setSubInPlayerId('')
-    setBenchSlots(emptyBenchSlots())
+    setBenchSelectionIds([])
     setStatus('Elenco limpo. Titulares e banco foram esvaziados.')
   }
 
@@ -565,23 +514,6 @@ const Career = () => {
     const titularIds = slots
       .map((slot) => slot.playerId)
       .filter((id): id is string => id !== null)
-    const starterSet = new Set(titularIds)
-    const reserveIds = benchSlots
-      .map((slot) => slot.playerId)
-      .filter((id): id is string => id !== null && !starterSet.has(id))
-    const startersPayload = slots
-      .map((slot, idx) => ({ slot, idx }))
-      .filter(({ slot }) => slot.playerId !== null)
-      .map(({ slot, idx }) => ({
-        playerId: slot.playerId as string,
-        slotZone: slot.zone as ApiSlotZone,
-        slotIndex: idx,
-      }))
-
-    const lineupToSave: SavedLineup = {
-      starters: startersPayload,
-      bench: reserveIds,
-    }
 
     if (titularIds.length < 7) {
       setStatus('Minimo de 7 jogadores. Adicione mais atletas antes de salvar.')
@@ -598,10 +530,10 @@ const Career = () => {
     setBusy(true)
 
     try {
-      await saveLineup(lineupToSave)
+      await saveLineup(titularIds)
       setSavedSlots(slots.map((slot) => ({ ...slot })))
       setIsDirty(false)
-      setStatus(`Escalacao salva com sucesso (${titularIds.length} titulares + ${reserveIds.length} reservas).`)
+      setStatus('Escalacao salva com sucesso.')
     } catch (error) {
       const msg =
         typeof error === 'string'
@@ -709,7 +641,28 @@ const Career = () => {
     }
   }
 
+  useEffect(() => {
+    if (!isDragging && !dragPayload) return
 
+    const trackPointer = (event: PointerEvent) => {
+      setDragCursor({ x: event.clientX, y: event.clientY })
+    }
+
+    const clearDrag = () => {
+      setIsDragging(false)
+      setDragPayload(null)
+      setDragCursor(null)
+    }
+
+    window.addEventListener('pointermove', trackPointer)
+    window.addEventListener('pointerup', clearDrag)
+    window.addEventListener('pointercancel', clearDrag)
+    return () => {
+      window.removeEventListener('pointermove', trackPointer)
+      window.removeEventListener('pointerup', clearDrag)
+      window.removeEventListener('pointercancel', clearDrag)
+    }
+  }, [isDragging, dragPayload])
 
   useEffect(() => {
     if (savedSlots.length === 0) {
@@ -728,93 +681,36 @@ const Career = () => {
     setIsDirty(changed)
   }, [slots, savedSlots])
 
-  useEffect(() => {
-    if (!dragSource) return
-
-    const onMove = (e: PointerEvent) => {
-      setDragPos({ x: e.clientX, y: e.clientY })
-    }
-
-    const onUp = (e: PointerEvent) => {
-      const el = document.elementFromPoint(e.clientX, e.clientY)
-
-      const mark = () => {
-        justDroppedRef.current = true
-        setTimeout(() => { justDroppedRef.current = false }, 0)
+  const applyDrop = (targetIdx: number, fromIdx: number, fromPlayerId: string | null) => {
+    setSlots((curr) => {
+      const next = [...curr]
+      if (fromIdx >= 0 && fromIdx !== targetIdx) {
+        const temp = next[fromIdx].playerId
+        next[fromIdx] = { ...next[fromIdx], playerId: next[targetIdx].playerId }
+        next[targetIdx] = { ...next[targetIdx], playerId: temp }
+        return next
       }
-
-      // Procura slot de titular
-      slotRefs.current.forEach((ref, targetIdx) => {
-        if (!ref.contains(el)) return
-        if (dragSource.type === 'slot' && targetIdx !== dragSource.idx) {
-          // Troca dois titulares
-          setSlots((curr) => {
-            const next = [...curr]
-            const temp = next[dragSource.idx].playerId
-            next[dragSource.idx] = { ...next[dragSource.idx], playerId: next[targetIdx].playerId }
-            next[targetIdx] = { ...next[targetIdx], playerId: temp }
-            return next
-          })
-          mark()
-        } else if (dragSource.type === 'list') {
-          // Jogador da lista → slot titular
-          setSlots((curr) => {
-            const next = [...curr]
-            const existingIdx = next.findIndex((s) => s.playerId === dragSource.playerId)
-            if (existingIdx !== -1)
-              next[existingIdx] = { ...next[existingIdx], playerId: next[targetIdx].playerId }
-            next[targetIdx] = { ...next[targetIdx], playerId: dragSource.playerId }
-            return next
-          })
-          mark()
-        } else if (dragSource.type === 'bench') {
-          // Reserva → slot titular: reserva entra no campo, titular anterior vai pro banco
-          const displaced = slots[targetIdx]?.playerId ?? null
-          setSlots((curr) => {
-            const next = [...curr]
-            next[targetIdx] = { ...next[targetIdx], playerId: dragSource.playerId }
-            return next
-          })
-          setBenchSlots((curr) => {
-            const next = curr.map((s) => ({ ...s }))
-            next[dragSource.idx] = { playerId: displaced }
-            return next
-          })
-          mark()
+      if (fromIdx === -1 && fromPlayerId) {
+        const existingIdx = next.findIndex((s) => s.playerId === fromPlayerId)
+        if (existingIdx !== -1) {
+          next[existingIdx] = {
+            ...next[existingIdx],
+            playerId: next[targetIdx].playerId,
+          }
         }
-      })
+        next[targetIdx] = { ...next[targetIdx], playerId: fromPlayerId }
+      }
+      return next
+    })
 
-      // Procura slot de reserva
-      benchRefs.current.forEach((ref, targetIdx) => {
-        if (!ref.contains(el)) return
-        if (dragSource.type === 'bench' && targetIdx !== dragSource.idx) {
-          // Troca dois reservas
-          setBenchSlots((curr) => {
-            const next = curr.map((s) => ({ ...s }))
-            const temp = next[dragSource.idx].playerId
-            next[dragSource.idx] = { playerId: next[targetIdx].playerId }
-            next[targetIdx] = { playerId: temp }
-            return next
-          })
-          mark()
-        } else if (dragSource.type !== 'bench') {
-          // Titular ou lista → reserva
-          applyBenchDrop(targetIdx, dragSource.playerId)
-          mark()
-        }
-      })
-
-      setDragSource(null)
-      setDragPos(null)
-    }
-
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-  }, [dragSource])
+    justDroppedRef.current = true
+    setTimeout(() => {
+      justDroppedRef.current = false
+    }, 0)
+    setIsDragging(false)
+    setDragPayload(null)
+    setDragCursor(null)
+  }
 
   const handleTabChange = (tabKey: TabKey) => {
     if (activeTab === 'escalacao' && tabKey !== 'escalacao' && isDirty) {
@@ -842,10 +738,6 @@ const Career = () => {
   const showLiveCard = focusMatch && (liveState === 'running' || liveState === 'paused' || liveState === 'done')
   const playerTeamIsHome = focusMatch?.homeTeamId === snapshot?.playerTeamId
   const currentResult = pendingResult.current
-  const benchSelectionIds = useMemo(
-    () => benchSlots.map((slot) => slot.playerId).filter((id): id is string => id !== null),
-    [benchSlots]
-  )
   const reservePlayers = squad
     .filter((player) => !slots.some((slot) => slot.playerId === player.id))
     .sort((a, b) => computeOvr(b) - computeOvr(a))
@@ -902,7 +794,7 @@ const Career = () => {
                     onClick={() => void handleSimulateRound()}
                     disabled={busy || !snapshot || snapshot.currentRound >= snapshot.totalRounds || hasLiveMatchOngoing}
                   >
-                    ▶ Iniciar Partida
+                    â–¶ Iniciar Partida
                   </button>
                   <div className='flex items-center gap-1 ml-auto'>
                     <span className='text-xs opacity-60 mr-1'>Vel:</span>
@@ -932,11 +824,11 @@ const Career = () => {
                         <div>
                           <span className='text-xs uppercase tracking-widest opacity-40'>Proxima partida</span>
                           <div className='text-xs opacity-50 mt-0.5'>
-                            Rodada {snapshot.currentRound + 1}/{snapshot.totalRounds} · {snapshot.nextMatchDate}
+                            Rodada {snapshot.currentRound + 1}/{snapshot.totalRounds} Â· {snapshot.nextMatchDate}
                           </div>
                         </div>
                         <div className='text-right'>
-                          <div className='text-xs opacity-40'>{isHome ? '🏠 Mandante' : '✈ Visitante'}</div>
+                          <div className='text-xs opacity-40'>{isHome ? 'ðŸ  Mandante' : 'âœˆ Visitante'}</div>
                           <div className='text-xs opacity-50 mt-0.5'>{nextMatch.homeStadium}</div>
                         </div>
                       </div>
@@ -952,7 +844,7 @@ const Career = () => {
                       </div>
 
                       <div className='mt-4 pt-3 border-t border-base-content/10 flex items-center justify-between text-xs opacity-50'>
-                        <span>📊 {snapshot.playerPosition}º na classificacao</span>
+                        <span>ðŸ“Š {snapshot.playerPosition}Âº na classificacao</span>
                         <span>{snapshot.leagueId}</span>
                       </div>
                     </div>
@@ -1101,7 +993,7 @@ const Career = () => {
                               </div>
                               {live && (
                                 <span className='shrink-0 text-[10px] opacity-50 whitespace-nowrap'>
-                                  ⚽ {live.lastGoalTeam.split(' ')[0]} {live.lastGoalMinute}&apos;
+                                  âš½ {live.lastGoalTeam.split(' ')[0]} {live.lastGoalMinute}&apos;
                                 </span>
                               )}
                             </div>
@@ -1134,7 +1026,7 @@ const Career = () => {
                       <div className='rounded border border-success/30 bg-success/10 px-3 py-2 text-xs'>
                         <span className='font-semibold text-success'>Substituicao</span>
                         <span className='ml-2 opacity-80'>
-                          {recentSubstitution.minute}&apos; · {recentSubstitution.zone} · Saiu {recentSubstitution.outPlayerName.split(' ')[0]} · Entrou {recentSubstitution.inPlayerName.split(' ')[0]}
+                          {recentSubstitution.minute}&apos; Â· {recentSubstitution.zone} Â· Saiu {recentSubstitution.outPlayerName.split(' ')[0]} Â· Entrou {recentSubstitution.inPlayerName.split(' ')[0]}
                         </span>
                       </div>
                     )}
@@ -1175,7 +1067,7 @@ const Career = () => {
                     <div className='grid grid-cols-1 gap-3 lg:grid-cols-[1.25fr_1fr]'>
                       <div className='rounded-md border border-base-content/10 bg-base-200/60 p-3'>
                         <div className='mb-2 text-[10px] uppercase tracking-widest opacity-45'>
-                          Mini escalacao em campo · clique para escolher quem sai
+                          Mini escalacao em campo Â· clique para escolher quem sai
                         </div>
                         <div className='space-y-2'>
                           {slotsByZone.map(({ zone, entries }) => (
@@ -1225,7 +1117,7 @@ const Career = () => {
 
                       <div className='rounded-md border border-base-content/10 bg-base-200/60 p-3'>
                         <div className='mb-2 text-[10px] uppercase tracking-widest opacity-45'>
-                          Banco · clique para escolher quem entra
+                          Banco Â· clique para escolher quem entra
                         </div>
                         <div className='max-h-52 space-y-1 overflow-y-auto pr-1'>
                           {eligibleBenchPlayers.map((player) => {
@@ -1279,13 +1171,13 @@ const Career = () => {
                       </button>
 
                       <span className='text-xs opacity-60'>
-                        Sai: {subOutSlotIdx !== null ? `slot ${subOutSlotIdx + 1}` : '-'} · Entra:{' '}
+                        Sai: {subOutSlotIdx !== null ? `slot ${subOutSlotIdx + 1}` : '-'} Â· Entra:{' '}
                         {subInPlayerId ? (squad.find((p) => p.id === subInPlayerId)?.name ?? '-') : '-'}
                       </span>
                     </div>
 
                     <p className='text-[11px] opacity-55'>
-                      Apos o fim da partida, a escalação volta para a que estava salva antes do jogo.
+                      Apos o fim da partida, a escalaÃ§Ã£o volta para a que estava salva antes do jogo.
                     </p>
                   </div>
                 )}
@@ -1385,7 +1277,10 @@ const Career = () => {
                 <div className='flex flex-col lg:flex-row gap-4'>
                   {/* Campo visual */}
                   <div
-                    className='flex-1 bg-green-800 rounded-lg p-4 flex flex-col gap-3 transition-shadow'
+                    className={[
+                      'flex-1 bg-green-800 rounded-lg p-4 flex flex-col gap-3 transition-shadow',
+                      isDragging ? 'ring-2 ring-primary/60' : '',
+                    ].join(' ')}
                   >
                     {slotsByZone.map(({ zone, entries }, zoneIdx) => (
                       <div
@@ -1404,7 +1299,7 @@ const Career = () => {
                               (p) => !slots.some((s) => s.playerId === p.id) || p.id === slot.playerId
                             )
 
-                            // Jogadores compatíveis com a zona do slot primeiro, depois os demais - ambos por OVR
+                            // Jogadores compatÃ­veis com a zona do slot primeiro, depois os demais - ambos por OVR
                             const compatible = availablePlayers
                               .filter((p) => isPositionInZone(slot.zone, p.position))
                               .sort((a, b) => computeOvr(b) - computeOvr(a))
@@ -1413,29 +1308,84 @@ const Career = () => {
                               .sort((a, b) => computeOvr(b) - computeOvr(a))
                             const sortedPlayers = [...compatible, ...others]
 
+                            const handleDrop = (e: React.DragEvent) => {
+                              e.preventDefault()
+                              const rawSlotIdx = e.dataTransfer.getData('slotIdx')
+                              const rawPlayerId = e.dataTransfer.getData('playerId')
+                              const plain = e.dataTransfer.getData('text/plain')
+
+                              let parsedIdx: number | null = null
+                              let parsedPlayerId: string | null = null
+
+                              if (plain) {
+                                try {
+                                  const payload = JSON.parse(plain) as {
+                                    slotIdx?: number
+                                    playerId?: string
+                                  }
+                                  if (typeof payload.slotIdx === 'number') {
+                                    parsedIdx = payload.slotIdx
+                                  }
+                                  if (typeof payload.playerId === 'string' && payload.playerId.trim()) {
+                                    parsedPlayerId = payload.playerId
+                                  }
+                                } catch {
+                                  if (plain.trim()) {
+                                    parsedPlayerId = plain
+                                  }
+                                }
+                              }
+
+                              const fromIdx = rawSlotIdx !== '' ? Number(rawSlotIdx) : (parsedIdx ?? -1)
+                              const fromPlayerId = rawPlayerId || parsedPlayerId || null
+                              applyDrop(idx, fromIdx, fromPlayerId)
+                            }
+
                             return (
                               <div
                                 key={idx}
                                 className='relative'
-                                ref={(el) => {
-                                  if (el) slotRefs.current.set(idx, el)
-                                  else slotRefs.current.delete(idx)
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={handleDrop}
+                                onPointerUp={(e) => {
+                                  if (!dragPayload) return
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  applyDrop(idx, dragPayload.slotIdx, dragPayload.playerId)
                                 }}
                               >
                                 <button
                                   type='button'
+                                  draggable={isFilled}
                                   onPointerDown={(e) => {
                                     if (!isFilled) return
-                                    setDragSource({ type: 'slot', idx, playerId: slot.playerId ?? '' })
-                                    setDragPos({ x: e.clientX, y: e.clientY })
+                                    setDragPayload({ slotIdx: idx, playerId: slot.playerId })
+                                    setIsDragging(true)
+                                    setDragCursor({ x: e.clientX, y: e.clientY })
                                   }}
+                                  onDragStart={(e) => {
+                                    setIsDragging(true)
+                                    e.dataTransfer.effectAllowed = 'move'
+                                    e.dataTransfer.setData('slotIdx', String(idx))
+                                    e.dataTransfer.setData('playerId', slot.playerId ?? '')
+                                    e.dataTransfer.setData(
+                                      'text/plain',
+                                      JSON.stringify({ slotIdx: idx, playerId: slot.playerId ?? '' })
+                                    )
+                                  }}
+                                  onDragEnd={() => {
+                                    setIsDragging(false)
+                                    setDragPayload(null)
+                                    setDragCursor(null)
+                                  }}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={handleDrop}
                                   onClick={() => {
                                     if (justDroppedRef.current) return
                                     setSelectedSlotIdx(isOpen ? null : idx)
                                   }}
                                   className={[
                                     'rounded-md px-2 py-1.5 text-center w-[4.5rem] text-xs transition-all border-2',
-                                    isFilled ? 'cursor-move' : '',
                                     isOpen
                                       ? 'border-yellow-400 bg-yellow-400/20 text-yellow-100 shadow-lg shadow-yellow-400/20'
                                       : isFilled
@@ -1548,81 +1498,40 @@ const Career = () => {
                     ))}
                   </div>
 
-                  <div className='w-full lg:w-40 flex-shrink-0 rounded-lg border border-slate-500/40 bg-slate-900/85 p-3'>
-                    <div className='mb-2 flex items-center justify-between'>
-                      <h3 className='text-xs font-semibold uppercase tracking-widest text-slate-200/90'>Reservas</h3>
-                      <span className='text-[10px] text-slate-300/70'>
-                        {benchSelectionIds.length}/{BENCH_SLOT_COUNT}
-                      </span>
-                    </div>
-
-                    <div className='space-y-1.5'>
-                      {benchSlots.map((benchSlot, benchIdx) => {
-                        const player = squad.find((p) => p.id === benchSlot.playerId)
-                        return (
-                          <button
-                            key={`bench-slot-${benchIdx}`}
-                            type='button'
-                            ref={(el) => {
-                              if (el) benchRefs.current.set(benchIdx, el)
-                              else benchRefs.current.delete(benchIdx)
-                            }}
-                            className={[
-                              'w-full rounded-md border-2 px-2 py-1.5 text-left text-xs transition-colors',
-                              player
-                                ? 'border-sky-400/55 bg-slate-800 text-slate-100 hover:border-sky-300'
-                                : 'border-slate-600/60 bg-slate-800/35 text-slate-400 border-dashed hover:border-slate-500',
-                            ].join(' ')}
-                            onPointerDown={(e) => {
-                              if (!player) return
-                              setDragSource({ type: 'bench', idx: benchIdx, playerId: player.id })
-                              setDragPos({ x: e.clientX, y: e.clientY })
-                            }}
-                            onClick={() => {
-                              if (!player) return
-                              if (justDroppedRef.current) return
-                              setBenchSlots((curr) => {
-                                const next = curr.map((slot) => ({ ...slot }))
-                                next[benchIdx] = { playerId: null }
-                                return next
-                              })
-                            }}
-                          >
-                            <div className='flex items-center justify-between gap-2'>
-                              <span className='font-bold text-[10px] tracking-wide opacity-80'>RES</span>
-                              <span className='text-[10px] opacity-60'>#{benchIdx + 1}</span>
-                            </div>
-                            <div className='truncate font-semibold leading-tight'>
-                              {player ? player.name.split(' ')[0] : 'Vazio'}
-                            </div>
-                            <div className='text-[10px] opacity-65'>
-                              {player ? `OVR ${computeOvr(player)}` : 'Arraste um jogador'}
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
                   {/* Lista de jogadores - drag source */}
                   <div className='w-full lg:w-52 flex-shrink-0 flex flex-col gap-2'>
                     <p className='text-xs opacity-50'>Arraste para um slot ou clique no slot para abrir opcoes</p>
                     <div className='overflow-y-auto max-h-96 space-y-0.5 pr-1'>
                       {squad.map((player) => {
-                        const isAssigned =
-                          slots.some((s) => s.playerId === player.id) ||
-                          benchSlots.some((s) => s.playerId === player.id)
+                        const isAssigned = slots.some((s) => s.playerId === player.id)
                         return (
                           <div
                             key={player.id}
+                            draggable
                             onPointerDown={(e) => {
-                              if (isAssigned) return
-                              setDragSource({ type: 'list', idx: -1, playerId: player.id })
-                              setDragPos({ x: e.clientX, y: e.clientY })
+                              e.preventDefault()
+                              setDragPayload({ slotIdx: -1, playerId: player.id })
+                              setIsDragging(true)
+                              setDragCursor({ x: e.clientX, y: e.clientY })
+                            }}
+                            onDragStart={(e) => {
+                              setIsDragging(true)
+                              e.dataTransfer.effectAllowed = 'move'
+                              e.dataTransfer.setData('playerId', player.id)
+                              e.dataTransfer.setData('slotIdx', '-1')
+                              e.dataTransfer.setData(
+                                'text/plain',
+                                JSON.stringify({ slotIdx: -1, playerId: player.id })
+                              )
+                            }}
+                            onDragEnd={() => {
+                              setIsDragging(false)
+                              setDragPayload(null)
+                              setDragCursor(null)
                             }}
                             className={[
                               'rounded px-2 py-1.5 text-xs flex items-center justify-between gap-1 cursor-grab transition-colors select-none',
-                              isAssigned ? 'opacity-40 cursor-not-allowed' : 'hover:bg-primary/20',
+                              isAssigned ? 'opacity-40' : 'hover:bg-primary/20',
                             ].join(' ')}
                           >
                             <div className='min-w-0'>
@@ -1634,6 +1543,45 @@ const Career = () => {
                         )
                       })}
                     </div>
+                  </div>
+                </div>
+
+                <div className='mt-4 rounded-md border border-base-content/15 bg-base-200/50 p-3'>
+                  <div className='mb-2 flex items-center justify-between'>
+                    <h3 className='text-sm font-semibold uppercase tracking-widest opacity-70'>
+                      Banco de reservas elegivel
+                    </h3>
+                    <span className='text-xs opacity-60'>{benchSelectionIds.length}/7</span>
+                  </div>
+                  <p className='mb-3 text-xs opacity-60'>
+                    Selecione ate 7 atletas que poderao entrar nas substituicoes durante a partida.
+                  </p>
+
+                  <div className='grid grid-cols-1 gap-1.5 md:grid-cols-2'>
+                    {reservePlayers.map((player) => {
+                      const selected = benchSelectionIds.includes(player.id)
+                      return (
+                        <button
+                          key={`bench-select-${player.id}`}
+                          type='button'
+                          onClick={() => handleToggleBenchPlayer(player.id)}
+                          className={[
+                            'flex items-center justify-between rounded border px-2 py-1.5 text-xs transition-colors',
+                            selected
+                              ? 'border-primary/60 bg-primary/20'
+                              : 'border-base-content/15 bg-base-100 hover:border-primary/40',
+                          ].join(' ')}
+                        >
+                          <span className='truncate text-left'>
+                            {player.name} ({player.position})
+                          </span>
+                          <span className='ml-2 shrink-0 font-mono font-bold'>OVR {computeOvr(player)}</span>
+                        </button>
+                      )
+                    })}
+                    {reservePlayers.length === 0 && (
+                      <p className='text-xs opacity-50'>Sem reservas disponiveis no momento.</p>
+                    )}
                   </div>
                 </div>
 
@@ -1658,18 +1606,21 @@ const Career = () => {
               </div>
             )}
 
-
+            {isDragging && dragPayload && dragCursor && dragPreviewPlayer && (
+              <div
+                className='pointer-events-none fixed z-[60]'
+                style={{ left: dragCursor.x + 14, top: dragCursor.y + 14 }}
+              >
+                <div className='rounded-md border border-primary/50 bg-base-100/95 px-2 py-1 shadow-xl backdrop-blur'>
+                  <div className='text-[11px] font-semibold leading-tight'>{dragPreviewPlayer.name}</div>
+                  <div className='text-[10px] opacity-60'>
+                    {dragPreviewPlayer.position} â€¢ OVR {computeOvr(dragPreviewPlayer)}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </main>
-
-        {dragSource && dragPos && (
-          <div
-            style={{ position: 'fixed', left: dragPos.x - 36, top: dragPos.y - 24, zIndex: 9999, pointerEvents: 'none' }}
-            className='rounded-md px-2 py-1.5 text-center w-[4.5rem] text-xs bg-yellow-400/20 border-2 border-yellow-400 text-yellow-100'
-          >
-            {squad.find((p) => p.id === dragSource.playerId)?.name.split(' ')[0]}
-          </div>
-        )}
       </div>
     </div>
   )

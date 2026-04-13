@@ -1,12 +1,17 @@
 use rand::seq::SliceRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-use crate::models::attributes::{zone_strength, Attributes, Zone};
+use crate::models::attributes::{
+    natural_slot_zone, out_of_position_multiplier, zone_strength, AttributeKind, Attributes, Zone,
+};
+use crate::models::lineup::SlotZone;
 use crate::models::player::{Player, Position};
 use crate::models::probability::{
     apply_creator_bonus, goal_probability, shot_type_strength, zone_contest, ShotType,
 };
+use crate::models::tactics::{PlayStyle, Tactics, TacticsZone};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MatchState {
@@ -15,6 +20,8 @@ pub struct MatchState {
     pub away_score: u8,
     pub home_squad: Vec<Player>,
     pub away_squad: Vec<Player>,
+    pub home_lineup_zones: Option<HashMap<String, SlotZone>>,
+    pub away_lineup_zones: Option<HashMap<String, SlotZone>>,
     pub is_paused: bool,
     pub is_finished: bool,
     pub events: Vec<MatchEvent>,
@@ -50,7 +57,7 @@ pub enum TeamSide {
     Away,
 }
 
-pub fn simulate_tick(state: &mut MatchState) -> Option<MatchEvent> {
+pub fn simulate_tick(state: &mut MatchState, tactics: &Tactics) -> Option<MatchEvent> {
     if state.is_paused || state.is_finished {
         return None;
     }
@@ -66,9 +73,21 @@ pub fn simulate_tick(state: &mut MatchState) -> Option<MatchEvent> {
         return Some(event);
     }
 
-    let home_midfield = zone_strength(&state.home_squad, Zone::Midfield);
-    let away_midfield = zone_strength(&state.away_squad, Zone::Midfield);
-    let home_advances = zone_contest(home_midfield, away_midfield);
+    let home_mid = zone_strength_with_tactics(
+        &state.home_squad,
+        TacticsZone::Midfield,
+        &tactics.formation,
+        &tactics.play_style,
+        state.home_lineup_zones.as_ref(),
+    );
+    let away_mid = zone_strength_with_tactics(
+        &state.away_squad,
+        TacticsZone::Midfield,
+        &tactics.formation,
+        &tactics.play_style,
+        state.away_lineup_zones.as_ref(),
+    );
+    let home_advances = zone_contest(home_mid, away_mid);
 
     // Nem toda jogada que vence o meio-campo vira ataque perigoso.
     if rand::random::<f64>() > 0.25 {
@@ -78,6 +97,8 @@ pub fn simulate_tick(state: &mut MatchState) -> Option<MatchEvent> {
 
     let home_squad = state.home_squad.clone();
     let away_squad = state.away_squad.clone();
+    let home_lineup_zones = state.home_lineup_zones.clone();
+    let away_lineup_zones = state.away_lineup_zones.clone();
 
     let tick_event = if home_advances {
         resolve_attack(
@@ -87,6 +108,9 @@ pub fn simulate_tick(state: &mut MatchState) -> Option<MatchEvent> {
             Zone::Defense,
             &home_squad,
             &away_squad,
+            home_lineup_zones.as_ref(),
+            away_lineup_zones.as_ref(),
+            tactics,
         )
     } else {
         resolve_attack(
@@ -96,6 +120,9 @@ pub fn simulate_tick(state: &mut MatchState) -> Option<MatchEvent> {
             Zone::Defense,
             &away_squad,
             &home_squad,
+            away_lineup_zones.as_ref(),
+            home_lineup_zones.as_ref(),
+            tactics,
         )
     };
 
@@ -103,52 +130,77 @@ pub fn simulate_tick(state: &mut MatchState) -> Option<MatchEvent> {
     tick_event
 }
 
-pub fn simulate_silent(home: Vec<Player>, away: Vec<Player>) -> (u8, u8) {
+pub fn simulate_silent(home: Vec<Player>, away: Vec<Player>) -> (u8, u8, Vec<(u8, TeamSide)>) {
+    let tactics = Tactics::default();
     let mut home_score = 0u8;
     let mut away_score = 0u8;
+    let mut goal_events: Vec<(u8, TeamSide)> = Vec::new();
 
     for minute in 1..=90u8 {
-        let home_midfield = zone_strength(&home, Zone::Midfield);
-        let away_midfield = zone_strength(&away, Zone::Midfield);
-        let home_advances = zone_contest(home_midfield, away_midfield);
+        let home_mid = zone_strength_with_tactics(
+            &home,
+            TacticsZone::Midfield,
+            &tactics.formation,
+            &tactics.play_style,
+            None,
+        );
+        let away_mid = zone_strength_with_tactics(
+            &away,
+            TacticsZone::Midfield,
+            &tactics.formation,
+            &tactics.play_style,
+            None,
+        );
+        let home_advances = zone_contest(home_mid, away_mid);
 
         if rand::random::<f64>() > 0.25 {
-            let _ = minute;
             continue;
         }
 
         let scored = if home_advances {
-            silent_attack_resolves(&home, &away, TeamSide::Home)
+            silent_attack_resolves(&home, &away, TeamSide::Home, &tactics)
         } else {
-            silent_attack_resolves(&away, &home, TeamSide::Away)
+            silent_attack_resolves(&away, &home, TeamSide::Away, &tactics)
         };
 
         match scored {
-            Some(TeamSide::Home) => home_score = home_score.saturating_add(1),
-            Some(TeamSide::Away) => away_score = away_score.saturating_add(1),
-            None => {
-                let _ = minute;
+            Some(TeamSide::Home) => {
+                home_score = home_score.saturating_add(1);
+                goal_events.push((minute, TeamSide::Home));
             }
+            Some(TeamSide::Away) => {
+                away_score = away_score.saturating_add(1);
+                goal_events.push((minute, TeamSide::Away));
+            }
+            None => {}
         }
     }
 
-    (home_score.min(15), away_score.min(15))
+    (home_score.min(15), away_score.min(15), goal_events)
 }
 
-pub fn simulate_full(home: Vec<Player>, away: Vec<Player>) -> (u8, u8, Vec<MatchEvent>) {
+pub fn simulate_full(
+    home: Vec<Player>,
+    away: Vec<Player>,
+    tactics: &Tactics,
+    home_lineup_zones: Option<&HashMap<String, SlotZone>>,
+    away_lineup_zones: Option<&HashMap<String, SlotZone>>,
+) -> (u8, u8, Vec<MatchEvent>) {
     let mut state = MatchState {
         minute: 1,
         home_score: 0,
         away_score: 0,
         home_squad: home,
         away_squad: away,
+        home_lineup_zones: home_lineup_zones.cloned(),
+        away_lineup_zones: away_lineup_zones.cloned(),
         is_paused: false,
         is_finished: false,
         events: Vec::new(),
     };
 
     while !state.is_finished {
-        simulate_tick(&mut state);
+        simulate_tick(&mut state, tactics);
     }
 
     (state.home_score.min(15), state.away_score.min(15), state.events)
@@ -161,23 +213,42 @@ fn resolve_attack(
     defense_zone: Zone,
     attacking_squad: &[Player],
     defending_squad: &[Player],
+    attacking_lineup_zones: Option<&HashMap<String, SlotZone>>,
+    defending_lineup_zones: Option<&HashMap<String, SlotZone>>,
+    tactics: &Tactics,
 ) -> Option<MatchEvent> {
-    let attack_strength = zone_strength(attacking_squad, attack_zone);
-    let defense_strength = zone_strength(defending_squad, defense_zone);
+    let atk_strength = zone_strength_with_tactics(
+        attacking_squad,
+        TacticsZone::Attack,
+        &tactics.formation,
+        &tactics.play_style,
+        attacking_lineup_zones,
+    );
+    let def_strength = zone_strength_with_tactics(
+        defending_squad,
+        TacticsZone::Defense,
+        &tactics.formation,
+        &tactics.play_style,
+        defending_lineup_zones,
+    );
 
-    if !zone_contest(attack_strength, defense_strength) {
+    // fallback para zone_strength original nos casos que nao tem contexto tatico
+    let _ = attack_zone;
+    let _ = defense_zone;
+
+    if !zone_contest(atk_strength, def_strength) {
         return None;
     }
 
     let attacker = select_attacker(attacking_squad)?;
     let creator = select_creator(attacking_squad).unwrap_or(attacker);
-    let gk_candidate = select_goalkeeper(defending_squad);
-    let no_real_gk = gk_candidate.is_none();
-    let goalkeeper = gk_candidate.or_else(|| defending_squad.first())?;
+    let (goalkeeper, goalkeeper_penalty) =
+        select_goalkeeper_with_penalty(defending_squad, defending_lineup_zones);
+    let goalkeeper = goalkeeper.or_else(|| defending_squad.first())?;
 
     let attacker_attrs = Attributes::from_player(attacker);
     let goalkeeper_attrs = Attributes::from_player(goalkeeper);
-    let shot_type = random_shot_type();
+    let shot_type = random_shot_type_with_style(&tactics.play_style);
     let shot_strength = shot_type_strength(
         attacker_attrs.get_effective_attribute(crate::models::attributes::AttributeKind::SHT, attacker.stamina),
         attacker_attrs.get_effective_attribute(crate::models::attributes::AttributeKind::SPD, attacker.stamina),
@@ -196,7 +267,7 @@ fn resolve_attack(
         crate::models::attributes::AttributeKind::DEF,
         goalkeeper.stamina,
     );
-    let effective_gk_def = if no_real_gk { raw_gk_def * 0.3 } else { raw_gk_def };
+    let effective_gk_def = raw_gk_def * goalkeeper_penalty;
     let goal_chance = goal_probability(creator_bonus, effective_gk_def);
 
     let mut rng = rand::thread_rng();
@@ -234,23 +305,35 @@ fn silent_attack_resolves(
     attacking_squad: &[Player],
     defending_squad: &[Player],
     attacking_side: TeamSide,
+    tactics: &Tactics,
 ) -> Option<TeamSide> {
-    let attack_strength = zone_strength(attacking_squad, Zone::Attack);
-    let defense_strength = zone_strength(defending_squad, Zone::Defense);
+    let atk_strength = zone_strength_with_tactics(
+        attacking_squad,
+        TacticsZone::Attack,
+        &tactics.formation,
+        &tactics.play_style,
+        None,
+    );
+    let def_strength = zone_strength_with_tactics(
+        defending_squad,
+        TacticsZone::Defense,
+        &tactics.formation,
+        &tactics.play_style,
+        None,
+    );
 
-    if !zone_contest(attack_strength, defense_strength) {
+    if !zone_contest(atk_strength, def_strength) {
         return None;
     }
 
     let attacker = select_attacker(attacking_squad)?;
     let creator = select_creator(attacking_squad).unwrap_or(attacker);
-    let gk_candidate = select_goalkeeper(defending_squad);
-    let no_real_gk = gk_candidate.is_none();
-    let goalkeeper = gk_candidate.or_else(|| defending_squad.first())?;
+    let (goalkeeper, goalkeeper_penalty) = select_goalkeeper_with_penalty(defending_squad, None);
+    let goalkeeper = goalkeeper.or_else(|| defending_squad.first())?;
 
     let attacker_attrs = Attributes::from_player(attacker);
     let goalkeeper_attrs = Attributes::from_player(goalkeeper);
-    let shot_type = random_shot_type();
+    let shot_type = random_shot_type_with_style(&tactics.play_style);
     let shot_strength = shot_type_strength(
         attacker_attrs.get_effective_attribute(crate::models::attributes::AttributeKind::SHT, attacker.stamina),
         attacker_attrs.get_effective_attribute(crate::models::attributes::AttributeKind::SPD, attacker.stamina),
@@ -269,7 +352,7 @@ fn silent_attack_resolves(
         crate::models::attributes::AttributeKind::DEF,
         goalkeeper.stamina,
     );
-    let effective_gk_def = if no_real_gk { raw_gk_def * 0.3 } else { raw_gk_def };
+    let effective_gk_def = raw_gk_def * goalkeeper_penalty;
     let goal_chance = goal_probability(creator_bonus, effective_gk_def);
 
     if rand::random::<f64>() < goal_chance {
@@ -296,8 +379,27 @@ fn push_event(
     event
 }
 
-fn select_goalkeeper(players: &[Player]) -> Option<&Player> {
-    players.iter().find(|player| matches!(player.position, Position::GOL))
+fn select_goalkeeper_with_penalty<'a>(
+    players: &'a [Player],
+    lineup_zones: Option<&HashMap<String, SlotZone>>,
+) -> (Option<&'a Player>, f64) {
+    if let Some(zones) = lineup_zones {
+        if let Some(player_in_gol) = players.iter().find(|p| zones.get(&p.id) == Some(&SlotZone::Gol)) {
+            let penalty = if matches!(player_in_gol.position, Position::GOL) {
+                1.0
+            } else {
+                0.25
+            };
+            return (Some(player_in_gol), penalty);
+        }
+
+        return (players.first(), 0.20);
+    }
+
+    match players.iter().find(|player| matches!(player.position, Position::GOL)) {
+        Some(gk) => (Some(gk), 1.0),
+        None => (players.first(), 0.30),
+    }
 }
 
 fn select_attacker(players: &[Player]) -> Option<&Player> {
@@ -338,17 +440,108 @@ fn select_creator(players: &[Player]) -> Option<&Player> {
     creators.choose(&mut rng).copied()
 }
 
-fn random_shot_type() -> ShotType {
-    let mut rng = rand::thread_rng();
-    match rng.gen_range(0..7) {
-        0 => ShotType::Normal,
-        1 => ShotType::CounterAttack,
-        2 => ShotType::LongShot,
-        3 => ShotType::Individual,
-        4 => ShotType::Header,
-        5 => ShotType::FreeKick,
-        _ => ShotType::Normal,
+/// zone_strength com modificadores taticos aplicados
+pub fn zone_strength_with_tactics(
+    players: &[Player],
+    tactics_zone: TacticsZone,
+    formation: &crate::models::tactics::Formation,
+    play_style: &PlayStyle,
+    lineup_zones: Option<&HashMap<String, SlotZone>>,
+) -> f64 {
+    let engine_zone = match tactics_zone {
+        TacticsZone::Defense => Zone::Defense,
+        TacticsZone::Midfield => Zone::Midfield,
+        TacticsZone::Attack => Zone::Attack,
+    };
+
+    let zone_players: Vec<(&Player, f64)> = players
+        .iter()
+        .filter_map(|player| {
+            let slot_zone = lineup_zones
+                .and_then(|zones| zones.get(&player.id).copied())
+                .unwrap_or_else(|| natural_slot_zone(&player.position));
+
+            if !slot_zone_matches_tactics(slot_zone, tactics_zone) {
+                return None;
+            }
+
+            let penalty = out_of_position_multiplier(&player.position, &slot_zone);
+            Some((player, penalty))
+        })
+        .collect();
+
+    let base = if zone_players.is_empty() {
+        zone_strength(players, engine_zone)
+    } else {
+        zone_players
+            .iter()
+            .map(|(player, penalty)| {
+                let attrs = Attributes::from_player(player);
+                let primary = position_primary_for_zone(tactics_zone);
+                mean_effective_attrs_zone(&attrs, &primary, player.stamina) * penalty
+            })
+            .sum::<f64>()
+            / zone_players.len() as f64
+    };
+    let formation_mul = formation.zone_multiplier(tactics_zone);
+    let (def_mod, mid_mod, atk_mod) = play_style.zone_modifiers();
+
+    let style_mul = match tactics_zone {
+        TacticsZone::Defense => def_mod,
+        TacticsZone::Midfield => mid_mod,
+        TacticsZone::Attack => atk_mod,
+    };
+
+    base * formation_mul * style_mul
+}
+
+fn slot_zone_matches_tactics(slot_zone: SlotZone, tactics_zone: TacticsZone) -> bool {
+    match tactics_zone {
+        TacticsZone::Defense => matches!(slot_zone, SlotZone::Gol | SlotZone::Def),
+        TacticsZone::Midfield => matches!(slot_zone, SlotZone::Mei),
+        TacticsZone::Attack => matches!(slot_zone, SlotZone::Ata),
     }
+}
+
+fn position_primary_for_zone(zone: TacticsZone) -> [AttributeKind; 3] {
+    match zone {
+        TacticsZone::Defense => [AttributeKind::DEF, AttributeKind::STR, AttributeKind::SPD],
+        TacticsZone::Midfield => [AttributeKind::PAS, AttributeKind::DEF, AttributeKind::STA],
+        TacticsZone::Attack => [AttributeKind::SHT, AttributeKind::SPD, AttributeKind::DRB],
+    }
+}
+
+fn mean_effective_attrs_zone(attrs: &Attributes, kinds: &[AttributeKind; 3], sta: u8) -> f64 {
+    kinds
+        .iter()
+        .map(|kind| attrs.get_effective_attribute(kind.clone(), sta))
+        .sum::<f64>()
+        / 3.0
+}
+
+fn random_shot_type_with_style(play_style: &PlayStyle) -> ShotType {
+    let weights = play_style.shot_type_weights();
+    let total: u32 = weights.iter().sum();
+    let mut rng = rand::thread_rng();
+    let mut pick = rng.gen_range(0..total);
+
+    let shot_types = [
+        ShotType::Normal,
+        ShotType::CounterAttack,
+        ShotType::LongShot,
+        ShotType::Individual,
+        ShotType::Header,
+        ShotType::FreeKick,
+    ];
+
+    for (weight, shot_type) in weights.iter().zip(shot_types.iter()) {
+        if pick < *weight {
+            return shot_type.clone();
+        }
+        pick -= weight;
+    }
+
+    ShotType::Normal
 }
 
 #[cfg(test)]
@@ -391,7 +584,7 @@ mod tests {
 
     #[test]
     fn simulate_silent_returns_reasonable_score_range() {
-        let (home, away) = simulate_silent(sample_squad("h"), sample_squad("a"));
+        let (home, away, _) = simulate_silent(sample_squad("h"), sample_squad("a"));
         assert!((0..=15).contains(&home));
         assert!((0..=15).contains(&away));
     }
@@ -409,7 +602,8 @@ mod tests {
             events: Vec::new(),
         };
 
-        let event = simulate_tick(&mut state).expect("expected halftime event");
+        let tactics = Tactics::default();
+        let event = simulate_tick(&mut state, &tactics).expect("expected halftime event");
         assert!(matches!(event.event_type, EventType::HalfTime));
     }
 
@@ -426,7 +620,8 @@ mod tests {
             events: Vec::new(),
         };
 
-        let event = simulate_tick(&mut state).expect("expected fulltime event");
+        let tactics = Tactics::default();
+        let event = simulate_tick(&mut state, &tactics).expect("expected fulltime event");
         assert!(matches!(event.event_type, EventType::FullTime));
         assert!(state.is_finished);
     }

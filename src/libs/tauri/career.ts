@@ -41,6 +41,7 @@ export interface LeagueOption {
 export interface Fixture {
   homeTeamId: string
   homeTeamName: string
+  homeStadium: string
   awayTeamId: string
   awayTeamName: string
 }
@@ -72,6 +73,8 @@ export interface CareerSnapshot {
   activeLeagueIds: string[]
   currentRound: number
   totalRounds: number
+  playerPosition: number
+  nextMatchDate: string
   table: TableEntry[]
   nextRoundFixtures: Fixture[]
   backgroundLeagues: BackgroundLeagueSnapshot[]
@@ -94,11 +97,28 @@ export interface RoundMatch {
   events: MatchEvent[]
 }
 
+export interface BackgroundGoalEvent {
+  minute: number
+  homeTeamName: string
+  awayTeamName: string
+  homeGoals: number
+  awayGoals: number
+}
+
+export interface BackgroundMatch {
+  homeTeamName: string
+  awayTeamName: string
+  homeGoals: number
+  awayGoals: number
+  goalEvents: BackgroundGoalEvent[]
+}
+
 export interface BackgroundLeagueRound {
   leagueId: string
   playedRound: number
   leaderTeamName: string
   leaderPoints: number
+  matches: BackgroundMatch[]
 }
 
 export interface SimulateRoundResult {
@@ -106,6 +126,19 @@ export interface SimulateRoundResult {
   matches: RoundMatch[]
   backgroundLeagues: BackgroundLeagueRound[]
   snapshot: CareerSnapshot
+}
+
+export type SlotZone = 'GOL' | 'DEF' | 'MEI' | 'ATA'
+
+export interface LineupStarterSlot {
+  playerId: string
+  slotZone: SlotZone
+  slotIndex: number
+}
+
+export interface SavedLineup {
+  starters: LineupStarterSlot[]
+  bench: string[]
 }
 
 interface RawTeam {
@@ -289,14 +322,14 @@ export const startNewCareerMulti = async (
     activeLeagueIds,
   })
 
-export const simulateCareerRound = async () =>
-  invoke<SimulateRoundResult>('simulate_career_round')
+export const simulateCareerRound = async (formation: string, playStyle: string) =>
+  invoke<SimulateRoundResult>('simulate_career_round', { formation, playStyle })
 
 export const getCareerSnapshot = async () =>
   invoke<CareerSnapshot>('get_career_snapshot')
 
-export const saveLineup = async (playerIds: string[]) =>
-  invoke<void>('save_lineup', { playerIds })
+export const saveLineup = async (lineup: SavedLineup) =>
+  invoke<void>('save_lineup', { lineup })
 
 export const getLineup = async () =>
-  invoke<string[]>('get_lineup')
+  invoke<SavedLineup>('get_lineup')

@@ -7,6 +7,8 @@ use crate::models::Player;
 pub struct Team {
     pub id: String,
     pub name: String,
+    #[serde(default)]
+    pub stadium: String,
     pub league_id: String,
     #[serde(default)]
     pub squad: Vec<Player>,
@@ -52,5 +54,7 @@ pub struct TeamsFile {
 pub struct TeamRecord {
     pub id: String,
     pub name: String,
+    #[serde(default)]
+    pub stadium: String,
     pub league_id: String,
 }

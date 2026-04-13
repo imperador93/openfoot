@@ -89,7 +89,7 @@ const NewGame = () => {
 
     try {
       await startNewCareerMulti(leagueId, teamId, selectedIds)
-      navigate('/career')
+      navigate('/career', { replace: true })
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Falha ao iniciar carreira')
     } finally {

@@ -14,14 +14,15 @@ pub enum ShotType {
 
 pub fn goal_probability(attacker_strength: f64, goalkeeper_def: f64) -> f64 {
     let attacker_sq = attacker_strength.powi(2);
-    let goalkeeper_sq = (goalkeeper_def * 3.0).powi(2);
+    let goalkeeper_sq = goalkeeper_def.powi(2);
     let denominator = attacker_sq + goalkeeper_sq;
 
     if denominator <= 0.0 {
         return 0.0;
     }
 
-    (attacker_sq / denominator).clamp(0.0, 1.0)
+    // Com forças iguais retorna ~0.175 (17.5% de chance) — conversão realista
+    (attacker_sq / denominator * 0.35).clamp(0.0, 1.0)
 }
 
 pub fn apply_creator_bonus(base_strength: f64, creator_pas: f64) -> f64 {
@@ -58,9 +59,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn goal_probability_with_equal_strengths_is_about_point_one() {
+    fn goal_probability_with_equal_strengths_is_about_point_twenty_five() {
         let value = goal_probability(50.0, 50.0);
-        assert!((value - 0.1).abs() < 1e-9);
+        assert!((value - 0.25).abs() < 1e-9);
     }
 
     #[test]

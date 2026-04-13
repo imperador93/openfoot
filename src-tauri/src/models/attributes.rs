@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::lineup::SlotZone;
 use crate::models::player::{Player, Position};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -132,6 +133,38 @@ pub fn zone_strength(players: &[Player], zone: Zone) -> f64 {
     let superiority_multiplier = 1.0 + (extra_players as f64 * 0.05);
 
     base_strength * superiority_multiplier
+}
+
+pub fn natural_slot_zone(position: &Position) -> SlotZone {
+    match position {
+        Position::GOL => SlotZone::Gol,
+        Position::ZAG | Position::LAT_E | Position::LAT_D => SlotZone::Def,
+        Position::VOL | Position::MEI | Position::MEI_A => SlotZone::Mei,
+        Position::PNT_E | Position::PNT_D | Position::SA | Position::ATA => SlotZone::Ata,
+    }
+}
+
+/// Multiplicador de desempenho ao atuar fora da zona natural.
+pub fn out_of_position_multiplier(player_position: &Position, slot_zone: &SlotZone) -> f64 {
+    if matches!(player_position, Position::GOL) && !matches!(slot_zone, SlotZone::Gol) {
+        return 0.20;
+    }
+
+    if !matches!(player_position, Position::GOL) && matches!(slot_zone, SlotZone::Gol) {
+        return 0.25;
+    }
+
+    let natural_zone = natural_slot_zone(player_position);
+    match (natural_zone, *slot_zone) {
+        (SlotZone::Gol, SlotZone::Gol) => 1.00,
+        (SlotZone::Def, SlotZone::Def) => 1.00,
+        (SlotZone::Mei, SlotZone::Mei) => 1.00,
+        (SlotZone::Ata, SlotZone::Ata) => 1.00,
+        (SlotZone::Def, SlotZone::Mei) | (SlotZone::Mei, SlotZone::Def) => 0.65,
+        (SlotZone::Mei, SlotZone::Ata) | (SlotZone::Ata, SlotZone::Mei) => 0.65,
+        (SlotZone::Def, SlotZone::Ata) | (SlotZone::Ata, SlotZone::Def) => 0.40,
+        _ => 1.00,
+    }
 }
 
 fn mean_effective_attrs(attrs: &Attributes, kinds: &[AttributeKind], sta_atual: u8) -> f64 {

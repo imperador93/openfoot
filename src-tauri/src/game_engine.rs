@@ -1,5 +1,7 @@
 use crate::engine::match_engine::{simulate_full, simulate_silent, EventType, TeamSide};
 use crate::models::{League, Player};
+use crate::models::lineup::SavedLineup;
+use crate::models::tactics::Tactics;
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -7,6 +9,7 @@ use std::collections::HashMap;
 struct TeamMeta {
     id: String,
     name: String,
+    stadium: String,
     squad: Vec<Player>,
 }
 
@@ -64,6 +67,7 @@ pub struct TableEntryDto {
 pub struct FixtureDto {
     home_team_id: String,
     home_team_name: String,
+    home_stadium: String,
     away_team_id: String,
     away_team_name: String,
 }
@@ -107,9 +111,31 @@ pub struct CareerSnapshotDto {
     active_league_ids: Vec<String>,
     current_round: u32,
     total_rounds: u32,
+    player_position: u32,
+    next_match_date: String,
     table: Vec<TableEntryDto>,
     next_round_fixtures: Vec<FixtureDto>,
     background_leagues: Vec<BackgroundLeagueSnapshotDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackgroundGoalEventDto {
+    minute: u32,
+    home_team_name: String,
+    away_team_name: String,
+    home_goals: i32,
+    away_goals: i32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackgroundMatchDto {
+    home_team_name: String,
+    away_team_name: String,
+    home_goals: i32,
+    away_goals: i32,
+    goal_events: Vec<BackgroundGoalEventDto>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -119,6 +145,7 @@ pub struct BackgroundLeagueRoundDto {
     played_round: u32,
     leader_team_name: String,
     leader_points: u32,
+    matches: Vec<BackgroundMatchDto>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -210,12 +237,25 @@ pub fn snapshot(state: &CareerState) -> CareerSnapshotDto {
                 .map(|m| FixtureDto {
                     home_team_id: player_season.teams[m.home_idx].id.clone(),
                     home_team_name: player_season.teams[m.home_idx].name.clone(),
+                    home_stadium: player_season.teams[m.home_idx].stadium.clone(),
                     away_team_id: player_season.teams[m.away_idx].id.clone(),
                     away_team_name: player_season.teams[m.away_idx].name.clone(),
                 })
                 .collect()
         })
         .unwrap_or_default();
+
+    // Posicao do jogador na tabela
+    let player_position = table_rows
+        .iter()
+        .position(|row| row.team_id.eq_ignore_ascii_case(&state.player_team_id))
+        .map(|idx| idx as u32 + 1)
+        .unwrap_or(0);
+
+    // Data gerada - temporada comeca em 10/08, +7 dias por rodada
+    let season_start = chrono::NaiveDate::from_ymd_opt(2025, 8, 10).unwrap();
+    let round_date = season_start + chrono::Duration::weeks(player_season.current_round as i64);
+    let next_match_date = round_date.format("%d/%m/%Y").to_string();
 
     let mut background_leagues: Vec<BackgroundLeagueSnapshotDto> = state
         .active_league_ids
@@ -243,6 +283,8 @@ pub fn snapshot(state: &CareerState) -> CareerSnapshotDto {
         active_league_ids: state.active_league_ids.clone(),
         current_round: player_season.current_round as u32,
         total_rounds: player_season.schedule.len() as u32,
+        player_position,
+        next_match_date,
         table: table_rows,
         next_round_fixtures,
         background_leagues,
@@ -256,7 +298,8 @@ fn best_eleven(squad: &[Player]) -> Vec<Player> {
     sorted
 }
 
-fn squad_for_match(squad: &[Player], lineup_ids: &[String]) -> Vec<Player> {
+fn squad_for_match(squad: &[Player], lineup: &SavedLineup) -> Vec<Player> {
+    let lineup_ids = lineup.starter_ids();
     if lineup_ids.len() >= 11 {
         let filtered: Vec<Player> = squad
             .iter()
@@ -270,7 +313,11 @@ fn squad_for_match(squad: &[Player], lineup_ids: &[String]) -> Vec<Player> {
     best_eleven(squad)
 }
 
-pub fn simulate_next_round(state: &mut CareerState, lineup: &[String]) -> Result<SimulateRoundResultDto, String> {
+pub fn simulate_next_round(
+    state: &mut CareerState,
+    lineup: &SavedLineup,
+    tactics: Tactics,
+) -> Result<SimulateRoundResultDto, String> {
     let (player_results, played_round) = {
         let player_season = state
             .seasons
@@ -287,6 +334,8 @@ pub fn simulate_next_round(state: &mut CareerState, lineup: &[String]) -> Result
         let player_team_id = state.player_team_id.clone();
         let mut player_results = Vec::with_capacity(round_matches.len());
 
+        let lineup_slot_zones = lineup.starter_slot_zones();
+
         for m in &round_matches {
             let home = &player_season.teams[m.home_idx];
             let away = &player_season.teams[m.away_idx];
@@ -302,8 +351,19 @@ pub fn simulate_next_round(state: &mut CareerState, lineup: &[String]) -> Result
                 best_eleven(&away.squad)
             };
 
+            let home_lineup_zones = if home.id.eq_ignore_ascii_case(&player_team_id) {
+                Some(&lineup_slot_zones)
+            } else {
+                None
+            };
+            let away_lineup_zones = if away.id.eq_ignore_ascii_case(&player_team_id) {
+                Some(&lineup_slot_zones)
+            } else {
+                None
+            };
+
             let (home_goals, away_goals, raw_events) =
-                simulate_full(home_squad, away_squad);
+                simulate_full(home_squad, away_squad, &tactics, home_lineup_zones, away_lineup_zones);
 
             update_table(
                 &mut player_season.table,
@@ -369,12 +429,13 @@ pub fn simulate_next_round(state: &mut CareerState, lineup: &[String]) -> Result
             }
 
             let round_matches = season.schedule[season.current_round].clone();
+            let mut bg_matches: Vec<BackgroundMatchDto> = Vec::with_capacity(round_matches.len());
 
             for m in &round_matches {
                 let home = &season.teams[m.home_idx];
                 let away = &season.teams[m.away_idx];
 
-                let (home_goals, away_goals) =
+                let (home_goals, away_goals, goal_events) =
                     simulate_silent(best_eleven(&home.squad), best_eleven(&away.squad));
 
                 update_table(
@@ -384,6 +445,36 @@ pub fn simulate_next_round(state: &mut CareerState, lineup: &[String]) -> Result
                     home_goals as i32,
                     away_goals as i32,
                 );
+
+                let home_name = home.name.clone();
+                let away_name = away.name.clone();
+
+                bg_matches.push(BackgroundMatchDto {
+                    home_team_name: home_name.clone(),
+                    away_team_name: away_name.clone(),
+                    home_goals: home_goals as i32,
+                    away_goals: away_goals as i32,
+                    goal_events: {
+                        let mut home_g = 0i32;
+                        let mut away_g = 0i32;
+                        goal_events
+                            .iter()
+                            .map(|(minute, side)| {
+                                match side {
+                                    TeamSide::Home => home_g += 1,
+                                    TeamSide::Away => away_g += 1,
+                                }
+                                BackgroundGoalEventDto {
+                                    minute: *minute as u32,
+                                    home_team_name: home_name.clone(),
+                                    away_team_name: away_name.clone(),
+                                    home_goals: home_g,
+                                    away_goals: away_g,
+                                }
+                            })
+                            .collect()
+                    },
+                });
             }
 
             season.current_round += 1;
@@ -394,6 +485,7 @@ pub fn simulate_next_round(state: &mut CareerState, lineup: &[String]) -> Result
                 played_round: season.current_round as u32,
                 leader_team_name: leader.0,
                 leader_points: leader.1,
+                matches: bg_matches,
             });
         }
     }
@@ -415,6 +507,7 @@ fn build_league_season(league: &League) -> Result<LeagueSeasonState, String> {
         .map(|team| TeamMeta {
             id: team.id.clone(),
             name: team.name.clone(),
+            stadium: team.stadium.clone(),
             squad: team.squad.clone(),
         })
         .collect();
