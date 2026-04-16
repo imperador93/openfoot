@@ -86,14 +86,16 @@ pub fn simulate_tick(state: &mut MatchState, home_tactics: &Tactics, away_tactic
         &home_tactics.formation,
         &home_tactics.play_style,
         state.home_lineup_zones.as_ref(),
-    );
+    ) * (1.0 + home_tactics.play_style.interaction_modifier(&away_tactics.play_style));
+    
     let away_mid = zone_strength_with_tactics(
         &state.away_squad,
         TacticsZone::Midfield,
         &away_tactics.formation,
         &away_tactics.play_style,
         state.away_lineup_zones.as_ref(),
-    );
+    ) * (1.0 + away_tactics.play_style.interaction_modifier(&home_tactics.play_style));
+    
     let home_advances = zone_contest(home_mid, away_mid);
 
     // Nem toda jogada que vence o meio-campo vira ataque perigoso.
@@ -118,6 +120,7 @@ pub fn simulate_tick(state: &mut MatchState, home_tactics: &Tactics, away_tactic
             home_lineup_zones.as_ref(),
             away_lineup_zones.as_ref(),
             home_tactics,
+            away_tactics,
         )
     } else {
         resolve_attack(
@@ -130,6 +133,7 @@ pub fn simulate_tick(state: &mut MatchState, home_tactics: &Tactics, away_tactic
             away_lineup_zones.as_ref(),
             home_lineup_zones.as_ref(),
             away_tactics,
+            home_tactics,
         )
     };
 
@@ -222,20 +226,31 @@ fn resolve_attack(
     defending_squad: &[Player],
     attacking_lineup_zones: Option<&HashMap<String, SlotZone>>,
     defending_lineup_zones: Option<&HashMap<String, SlotZone>>,
-    tactics: &Tactics,
+    attacking_tactics: &Tactics,
+    defending_tactics: &Tactics,
 ) -> Option<MatchEvent> {
+    // Modificador de interação na fase de ataque (Contraataque vs PosseDeBola)
+    let attack_phase_modifier = if matches!(attacking_tactics.play_style, PlayStyle::Contraataque)
+        && matches!(defending_tactics.play_style, PlayStyle::PosseDeBola)
+    {
+        0.15
+    } else {
+        0.0
+    };
+    
     let atk_strength = zone_strength_with_tactics(
         attacking_squad,
         TacticsZone::Attack,
-        &tactics.formation,
-        &tactics.play_style,
+        &attacking_tactics.formation,
+        &attacking_tactics.play_style,
         attacking_lineup_zones,
-    );
+    ) * (1.0 + attack_phase_modifier);
+    
     let def_strength = zone_strength_with_tactics(
         defending_squad,
         TacticsZone::Defense,
-        &tactics.formation,
-        &tactics.play_style,
+        &defending_tactics.formation,
+        &defending_tactics.play_style,
         defending_lineup_zones,
     );
 
@@ -244,18 +259,73 @@ fn resolve_attack(
     let _ = defense_zone;
 
     if !zone_contest(atk_strength, def_strength) {
+        // Defesa venceu — Momento 1 para escanteio (defensor afasta antes do chute)
+        let mut rng = rand::thread_rng();
+        
+        // Chance de escanteio baseada no melhor defensor
+        if let Some(best_defender) = select_best_defender(defending_squad) {
+            let def_str_sum = (best_defender.defense + best_defender.stamina) as f64;
+            let baseline: f64 = 150.0;
+            let corner_prob = def_str_sum.powi(2) / (def_str_sum.powi(2) + baseline.powi(2));
+            
+            if rng.gen::<f64>() < corner_prob {
+                return Some(push_event(
+                    state,
+                    EventType::Corner,
+                    None,
+                    Some(attacking_side.clone()),
+                ));
+            }
+        }
+        
+        // Caso não gere escanteio, chance de falta baseada no pior defensor
+        if let Some(defender) = select_worst_defender(defending_squad) {
+            let foul_chance = if defender.defense < 60 {
+                0.25
+            } else {
+                0.10
+            };
+            
+            if rng.gen::<f64>() < foul_chance {
+                // Falta cometida
+                let yellow_chance = 0.15;
+                let red_chance = 0.02;
+                
+                let event_type = if rng.gen::<f64>() < red_chance {
+                    EventType::RedCard
+                } else if rng.gen::<f64>() < yellow_chance {
+                    EventType::YellowCard
+                } else {
+                    EventType::Foul
+                };
+                
+                // Inverter o lado do time pois a falta é do time defensor
+                let foul_side = match attacking_side {
+                    TeamSide::Home => TeamSide::Away,
+                    TeamSide::Away => TeamSide::Home,
+                };
+                
+                return Some(push_event(
+                    state,
+                    event_type,
+                    Some(defender.name.clone()),
+                    Some(foul_side),
+                ));
+            }
+        }
+        
         return None;
     }
 
-    let attacker = select_attacker(attacking_squad)?;
-    let creator = select_creator(attacking_squad).unwrap_or(attacker);
+    let attacker = select_attacker(attacking_squad, &attacking_tactics.play_style)?;
+    let creator = select_creator(attacking_squad, &attacking_tactics.play_style).unwrap_or(attacker);
     let (goalkeeper, goalkeeper_penalty) =
         select_goalkeeper_with_penalty(defending_squad, defending_lineup_zones);
     let goalkeeper = goalkeeper.or_else(|| defending_squad.first())?;
 
     let attacker_attrs = Attributes::from_player(attacker);
     let goalkeeper_attrs = Attributes::from_player(goalkeeper);
-    let shot_type = random_shot_type_with_style(&tactics.play_style);
+    let shot_type = random_shot_type_with_style(&attacking_tactics.play_style);
     let shot_strength = shot_type_strength(
         attacker_attrs.get_effective_attribute(crate::models::attributes::AttributeKind::SHT, attacker.stamina),
         attacker_attrs.get_effective_attribute(crate::models::attributes::AttributeKind::SPD, attacker.stamina),
@@ -290,15 +360,52 @@ fn resolve_attack(
             state,
             EventType::Goal,
             Some(attacker.name.clone()),
-            Some(attacking_side),
+            Some(attacking_side.clone()),
         ));
     }
 
-    let event_type = if rng.gen::<f64>() < 0.5 {
+    // Momento 2 — Chute aconteceu mas não entrou: chance de escanteio
+    let is_save = rng.gen::<f64>() < 0.5;
+    let event_type = if is_save {
         EventType::Save
     } else {
         EventType::NearMiss
     };
+    
+    // Calcular probabilidade de escanteio baseada no tipo de evento
+    let corner_prob = if is_save {
+        // Save → usar DEF do goleiro
+        let gk_def = raw_gk_def;
+        let baseline: f64 = 120.0;
+        gk_def.powi(2) / (gk_def.powi(2) + baseline.powi(2))
+    } else {
+        // NearMiss → usar média DEF+STR dos defensores
+        let defenders: Vec<&Player> = defending_squad
+            .iter()
+            .filter(|p| matches!(p.position, Position::ZAG | Position::LAT_E | Position::LAT_D))
+            .collect();
+        
+        if !defenders.is_empty() {
+            let avg_def_str: f64 = defenders
+                .iter()
+                .map(|p| (p.defense + p.stamina) as f64)
+                .sum::<f64>() / defenders.len() as f64;
+            let baseline: f64 = 160.0;
+            avg_def_str.powi(2) / (avg_def_str.powi(2) + baseline.powi(2))
+        } else {
+            0.0
+        }
+    };
+    
+    if rng.gen::<f64>() < corner_prob {
+        // Gera escanteio ao invés do evento Save/NearMiss
+        return Some(push_event(
+            state,
+            EventType::Corner,
+            None,
+            Some(attacking_side.clone()),
+        ));
+    }
 
     Some(push_event(
         state,
@@ -333,8 +440,8 @@ fn silent_attack_resolves(
         return None;
     }
 
-    let attacker = select_attacker(attacking_squad)?;
-    let creator = select_creator(attacking_squad).unwrap_or(attacker);
+    let attacker = select_attacker(attacking_squad, &tactics.play_style)?;
+    let creator = select_creator(attacking_squad, &tactics.play_style).unwrap_or(attacker);
     let (goalkeeper, goalkeeper_penalty) = select_goalkeeper_with_penalty(defending_squad, None);
     let goalkeeper = goalkeeper.or_else(|| defending_squad.first())?;
 
@@ -409,14 +516,69 @@ fn select_goalkeeper_with_penalty<'a>(
     }
 }
 
-fn select_attacker(players: &[Player]) -> Option<&Player> {
-    let mut attackers: Vec<&Player> = players
+fn select_worst_defender<'a>(players: &'a [Player]) -> Option<&'a Player> {
+    let mut defenders: Vec<&Player> = players
         .iter()
         .filter(|player| {
             matches!(
                 player.position,
-                Position::ATA | Position::SA | Position::PNT_E | Position::PNT_D | Position::MEI_A
+                Position::ZAG | Position::LAT_E | Position::LAT_D | Position::VOL
             )
+        })
+        .collect();
+
+    if defenders.is_empty() {
+        defenders = players.iter().collect();
+    }
+
+    // Seleciona o defensor com menor atributo DEF (mais propenso a cometer faltas)
+    defenders.into_iter().min_by_key(|p| p.defense)
+}
+
+fn select_best_defender<'a>(players: &'a [Player]) -> Option<&'a Player> {
+    let mut defenders: Vec<&Player> = players
+        .iter()
+        .filter(|player| {
+            matches!(
+                player.position,
+                Position::ZAG | Position::LAT_E | Position::LAT_D
+            )
+        })
+        .collect();
+
+    if defenders.is_empty() {
+        defenders = players.iter().collect();
+    }
+
+    // Seleciona o defensor com maior soma DEF+STR (melhor para afastar a bola)
+    defenders.into_iter().max_by_key(|p| p.defense + p.stamina)
+}
+
+fn select_attacker<'a>(players: &'a [Player], play_style: &PlayStyle) -> Option<&'a Player> {
+    let mut attackers: Vec<&Player> = players
+        .iter()
+        .filter(|player| {
+            // Posições base para todos os estilos
+            let is_base_attacker = matches!(
+                player.position,
+                Position::ATA | Position::SA | Position::PNT_E | Position::PNT_D | Position::MEI_A
+            );
+            
+            // Posições extras por estilo de jogo
+            let is_style_attacker = match play_style {
+                PlayStyle::JogoAereo => matches!(player.position, Position::ZAG | Position::VOL),
+                PlayStyle::BolaDireta => matches!(player.position, Position::VOL),
+                PlayStyle::PressingAlto => matches!(player.position, Position::LAT_E | Position::LAT_D),
+                PlayStyle::Retranca => matches!(player.position, Position::VOL),
+                _ => false,
+            };
+            
+            // Para Retranca, APENAS VOL pode atacar (raramente)
+            if matches!(play_style, PlayStyle::Retranca) {
+                return matches!(player.position, Position::VOL);
+            }
+            
+            is_base_attacker || is_style_attacker
         })
         .collect();
 
@@ -428,14 +590,29 @@ fn select_attacker(players: &[Player]) -> Option<&Player> {
     attackers.choose(&mut rng).copied()
 }
 
-fn select_creator(players: &[Player]) -> Option<&Player> {
+fn select_creator<'a>(players: &'a [Player], play_style: &PlayStyle) -> Option<&'a Player> {
     let mut creators: Vec<&Player> = players
         .iter()
         .filter(|player| {
-            matches!(
+            // Para Retranca, APENAS VOL e ZAG podem criar
+            if matches!(play_style, PlayStyle::Retranca) {
+                return matches!(player.position, Position::VOL | Position::ZAG);
+            }
+            
+            // Posições base para todos os estilos
+            let is_base_creator = matches!(
                 player.position,
                 Position::MEI | Position::MEI_A | Position::VOL | Position::PNT_E | Position::PNT_D
-            )
+            );
+            
+            // Posições extras por estilo de jogo
+            let is_style_creator = match play_style {
+                PlayStyle::BolaDireta => matches!(player.position, Position::ZAG | Position::LAT_E | Position::LAT_D),
+                PlayStyle::PressingAlto => matches!(player.position, Position::LAT_E | Position::LAT_D),
+                _ => false,
+            };
+            
+            is_base_creator || is_style_creator
         })
         .collect();
 

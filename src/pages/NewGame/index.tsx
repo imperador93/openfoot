@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router'
 
 import { fetchLeagues, startNewCareerMulti, type LeagueOption } from '@/libs/tauri/career'
 
-type Step = 1 | 2 | 3
+type Step = 1 | 2 | 3 | 4
 
-const STEP_LABELS = ['País', 'Time', 'Confirmar']
+const STEP_LABELS = ['Nome do Técnico', 'Países', 'Escolha seu Time', 'Confirmar']
 
 const StepIndicator = ({ current }: { current: Step }) => (
   <div className='flex items-center gap-2 text-sm mb-6'>
@@ -37,13 +37,18 @@ const NewGame = () => {
   const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>(1)
+  const [coachName, setCoachName] = useState('')
   const [leagues, setLeagues] = useState<LeagueOption[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
-  const [mainLeagueId, setMainLeagueId] = useState('')
+  const [selectedLeagueId, setSelectedLeagueId] = useState('')
   const [teamId, setTeamId] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Accordion states
+  const [expandedCountry, setExpandedCountry] = useState<string | null>(null)
+  const [expandedLeagueId, setExpandedLeagueId] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -51,6 +56,7 @@ const NewGame = () => {
         const data = await fetchLeagues()
         setLeagues(data)
       } catch (e) {
+        console.error('Erro ao carregar ligas:', e)
         setError(e instanceof Error ? e.message : 'Falha ao carregar ligas')
       } finally {
         setLoading(false)
@@ -59,30 +65,27 @@ const NewGame = () => {
     void load()
   }, [])
 
-  // Países únicos disponíveis
+  // Países únicos disponíveis (ordem alfabética)
   const countries = useMemo(
     () => [...new Set(leagues.map((l) => l.country).filter(Boolean))].sort(),
     [leagues],
   )
 
-  // Ligas derivadas dos países selecionados
+  // Ligas de todos os países selecionados (background)
   const selectedLeagueIds = useMemo(
     () => leagues.filter((l) => selectedCountries.includes(l.country)).map((l) => l.id),
     [leagues, selectedCountries],
   )
 
-  const mainLeague = useMemo(
-    () => leagues.find((l) => l.id === mainLeagueId) ?? null,
-    [leagues, mainLeagueId],
+  const selectedLeague = useMemo(
+    () => leagues.find((l) => l.id === selectedLeagueId) ?? null,
+    [leagues, selectedLeagueId],
   )
 
-  // Reset team when main league changes
-  useEffect(() => {
-    if (!mainLeague) return
-    if (!mainLeague.teams.some((t) => t.id === teamId)) {
-      setTeamId(mainLeague.teams[0]?.id ?? '')
-    }
-  }, [mainLeagueId]) // eslint-disable-line react-hooks/exhaustive-deps
+  const selectedMainCountry = useMemo(
+    () => selectedLeague?.country ?? '',
+    [selectedLeague],
+  )
 
   const toggleCountry = (country: string) => {
     setSelectedCountries((prev) =>
@@ -90,30 +93,35 @@ const NewGame = () => {
     )
   }
 
+  const selectAllCountries = () => {
+    setSelectedCountries([...countries])
+  }
+
   const goToStep2 = () => {
-    if (selectedLeagueIds.length === 0) return
-    const newMain =
-      mainLeagueId && selectedLeagueIds.includes(mainLeagueId)
-        ? mainLeagueId
-        : selectedLeagueIds[0]
-    setMainLeagueId(newMain)
+    if (!coachName.trim()) return
     setStep(2)
   }
 
   const goToStep3 = () => {
-    if (!mainLeagueId || !teamId) return
+    if (selectedCountries.length === 0) return
     setStep(3)
   }
 
+  const goToStep4 = () => {
+    if (!selectedLeagueId || !teamId) return
+    setStep(4)
+  }
+
   const handleStart = async () => {
-    if (!mainLeagueId || !teamId) return
+    if (!selectedLeagueId || !teamId || !coachName.trim()) return
     setBusy(true)
     setError(null)
     try {
-      const allIds = selectedLeagueIds.includes(mainLeagueId)
+      // Todas as ligas dos países selecionados
+      const allIds = selectedLeagueIds.includes(selectedLeagueId)
         ? selectedLeagueIds
-        : [...selectedLeagueIds, mainLeagueId]
-      await startNewCareerMulti(mainLeagueId, teamId, allIds)
+        : [...selectedLeagueIds, selectedLeagueId]
+      await startNewCareerMulti(selectedLeagueId, teamId, coachName.trim(), allIds)
       navigate('/career', { replace: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao iniciar carreira')
@@ -122,15 +130,10 @@ const NewGame = () => {
     }
   }
 
-  const selectedTeamName = mainLeague?.teams.find((t) => t.id === teamId)?.name ?? ''
+  const selectedTeamName = selectedLeague?.teams.find((t) => t.id === teamId)?.name ?? ''
   const backgroundLeagues = leagues.filter(
-    (l) => l.id !== mainLeagueId && selectedLeagueIds.includes(l.id),
+    (l) => l.id !== selectedLeagueId && selectedLeagueIds.includes(l.id),
   )
-
-  const cardBase =
-    'rounded-md border-2 p-4 text-left transition-colors cursor-pointer bg-base-100'
-  const cardSelected = 'border-success text-success'
-  const cardIdle = 'border-base-content/20 hover:border-base-content/40'
 
   return (
     <div className='min-h-svh bg-base-200 text-base-content flex flex-col'>
@@ -139,86 +142,191 @@ const NewGame = () => {
 
         {loading ? (
           <p className='text-sm opacity-70'>Carregando ligas...</p>
-        ) : error && step !== 3 ? (
+        ) : error && step !== 4 ? (
           <p className='text-sm text-error'>{error}</p>
         ) : (
           <>
             <StepIndicator current={step} />
 
-            {/* ── Passo 1: Escolher países ── */}
+            {/* ── Passo 1: Nome do Técnico ── */}
             {step === 1 && (
               <div className='flex flex-col gap-4'>
                 <p className='text-sm opacity-70'>
-                  Selecione os países. Todas as ligas de cada país serão incluídas na simulação.
+                  Digite o seu nome como técnico. Este nome será exibido durante toda a carreira.
                 </p>
-                <div className='grid grid-cols-2 md:grid-cols-3 gap-3'>
+                
+                <div className='bg-base-100 border border-base-content/20 rounded-md p-6 max-w-md'>
+                  <label className='form-control'>
+                    <div className='label'>
+                      <span className='label-text font-semibold'>Nome do Técnico</span>
+                    </div>
+                    <input
+                      type='text'
+                      placeholder='Digite seu nome...'
+                      className='input input-bordered w-full'
+                      value={coachName}
+                      onChange={(e) => setCoachName(e.target.value)}
+                      maxLength={30}
+                      autoFocus
+                    />
+                    <div className='label'>
+                      <span className='label-text-alt opacity-50'>Máximo 30 caracteres</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* ── Passo 2: Escolher países (lista com checkboxes) ── */}
+            {step === 2 && (
+              <div className='flex flex-col gap-4'>
+                <div className='flex items-center justify-between'>
+                  <p className='text-sm opacity-70'>
+                    Selecione os países que rodarão na simulação (background). Todas as ligas desses países serão incluídas.
+                  </p>
+                  <button
+                    type='button'
+                    className='btn btn-sm btn-outline'
+                    onClick={selectAllCountries}
+                  >
+                    Selecionar todos
+                  </button>
+                </div>
+                
+                <div className='bg-base-100 border border-base-content/20 rounded-md divide-y divide-base-content/10 max-h-[500px] overflow-y-auto'>
                   {countries.map((country) => {
                     const selected = selectedCountries.includes(country)
                     const leagueCount = leagues.filter((l) => l.country === country).length
                     return (
-                      <button
+                      <label
                         key={country}
-                        type='button'
-                        onClick={() => toggleCountry(country)}
-                        className={`${cardBase} ${selected ? cardSelected : cardIdle}`}
+                        className='flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer transition-colors'
                       >
-                        <div className='font-semibold text-sm'>{country}</div>
-                        <div className='text-xs opacity-60 mt-1'>
-                          {leagueCount} {leagueCount === 1 ? 'liga' : 'ligas'}
+                        <input
+                          type='checkbox'
+                          className='checkbox checkbox-success'
+                          checked={selected}
+                          onChange={() => toggleCountry(country)}
+                        />
+                        <div className='flex-1'>
+                          <div className='font-semibold'>{country}</div>
+                          <div className='text-xs opacity-60'>
+                            {leagueCount} {leagueCount === 1 ? 'liga' : 'ligas'}
+                          </div>
                         </div>
-                      </button>
+                      </label>
                     )
                   })}
                 </div>
               </div>
             )}
 
-            {/* ── Passo 2: Escolher time ── */}
-            {step === 2 && (
+            {/* ── Passo 3: Escolher país → liga → time (accordion) ── */}
+            {step === 3 && (
               <div className='flex flex-col gap-4'>
                 <p className='text-sm opacity-70'>
-                  Escolha sua liga principal e o time que você vai gerenciar.
+                  Escolha o time que você vai gerenciar. Expanda o país e a liga para ver os times disponíveis.
                 </p>
-
-                <div>
-                  <label className='text-xs opacity-60 uppercase tracking-wide mb-1 block'>
-                    Liga principal
-                  </label>
-                  <select
-                    className='select select-bordered w-full max-w-xs'
-                    value={mainLeagueId}
-                    onChange={(e) => setMainLeagueId(e.target.value)}
-                  >
-                    {leagues
-                      .filter((l) => selectedLeagueIds.includes(l.id))
-                      .map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div className='grid grid-cols-2 md:grid-cols-3 gap-3'>
-                  {(mainLeague?.teams ?? []).map((team) => {
-                    const selected = team.id === teamId
+                
+                <div className='bg-base-100 border border-base-content/20 rounded-md divide-y divide-base-content/10 max-h-[75vh] overflow-y-auto'>
+                  {[...selectedCountries].sort().map((country) => {
+                    const countryLeagues = leagues.filter((l) => l.country === country)
+                    const isCountryExpanded = expandedCountry === country
+                    
                     return (
-                      <button
-                        key={team.id}
-                        type='button'
-                        onClick={() => setTeamId(team.id)}
-                        className={`${cardBase} ${selected ? cardSelected : cardIdle}`}
-                      >
-                        <div className='font-semibold text-sm'>{team.name}</div>
-                      </button>
+                      <div key={country}>
+                        {/* País header */}
+                        <button
+                          type='button'
+                          className='w-full flex items-center justify-between p-2 hover:bg-base-200 transition-colors text-left'
+                          onClick={() => setExpandedCountry(isCountryExpanded ? null : country)}
+                        >
+                          <div className='flex items-center gap-2'>
+                            <span className='text-base'>{isCountryExpanded ? '▼' : '▶'}</span>
+                            <span className='font-semibold text-sm'>{country}</span>
+                            <span className='text-xs opacity-50'>
+                              ({countryLeagues.length} {countryLeagues.length === 1 ? 'liga' : 'ligas'})
+                            </span>
+                          </div>
+                        </button>
+                        
+                        {/* Ligas */}
+                        {isCountryExpanded && (
+                          <div className='bg-base-200/50'>
+                            {countryLeagues.sort((a, b) => a.name.localeCompare(b.name)).map((league) => {
+                              const isLeagueExpanded = expandedLeagueId === league.id
+                              
+                              return (
+                                <div key={league.id} className='border-t border-base-content/10'>
+                                  {/* Liga header */}
+                                  <button
+                                    type='button'
+                                    className='w-full flex items-center justify-between p-2 pl-8 hover:bg-base-300 transition-colors text-left'
+                                    onClick={() => setExpandedLeagueId(isLeagueExpanded ? null : league.id)}
+                                  >
+                                    <div className='flex items-center gap-2'>
+                                      <span className='text-sm'>{isLeagueExpanded ? '▼' : '▶'}</span>
+                                      <span className='font-medium text-sm'>{league.name}</span>
+                                      <span className='text-xs opacity-50'>
+                                        ({league.teams.length} times)
+                                      </span>
+                                    </div>
+                                  </button>
+                                  
+                                  {/* Times */}
+                                  {isLeagueExpanded && (
+                                    <div className='bg-base-100'>
+                                      {league.teams.sort((a, b) => a.name.localeCompare(b.name)).map((team) => {
+                                        const isSelected = teamId === team.id && selectedLeagueId === league.id
+                                        
+                                        return (
+                                          <button
+                                            key={team.id}
+                                            type='button'
+                                            className={`w-full flex items-center justify-between gap-2 p-1.5 pl-12 hover:bg-base-200 transition-colors text-left border-t border-base-content/5 ${
+                                              isSelected ? 'bg-success/10 border-l-4 border-l-success' : ''
+                                            }`}
+                                            onClick={() => {
+                                              setSelectedLeagueId(league.id)
+                                              setTeamId(team.id)
+                                            }}
+                                          >
+                                            <div className='flex items-center gap-2 flex-1'>
+                                              <div className={`w-3 h-3 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                                isSelected ? 'border-success bg-success' : 'border-base-content/30'
+                                              }`}>
+                                                {isSelected && (
+                                                  <div className='w-1.5 h-1.5 bg-success-content rounded-full' />
+                                                )}
+                                              </div>
+                                              <span className={`text-sm ${isSelected ? 'font-semibold text-success' : ''}`}>
+                                                {team.name}
+                                              </span>
+                                            </div>
+                                            {team.budget !== undefined && (
+                                              <span className='text-xs opacity-60 pr-2'>
+                                                R$ {(team.budget / 1_000_000).toFixed(1)}M
+                                              </span>
+                                            )}
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
               </div>
             )}
 
-            {/* ── Passo 3: Confirmar ── */}
-            {step === 3 && (
+            {/* ── Passo 4: Confirmar ── */}
+            {step === 4 && (
               <div className='flex flex-col gap-4'>
                 <p className='text-sm opacity-70'>
                   Confirme os dados antes de iniciar sua carreira.
@@ -226,13 +334,16 @@ const NewGame = () => {
 
                 <div className='bg-base-100 border border-base-content/20 rounded-md p-5 flex flex-col gap-5'>
                   <div>
+                    <div className='text-xs opacity-60 uppercase tracking-wide mb-1'>Técnico</div>
+                    <div className='text-lg font-semibold text-primary'>{coachName}</div>
+                  </div>
+
+                  <div>
                     <div className='text-xs opacity-60 uppercase tracking-wide mb-1'>
                       Liga principal
                     </div>
-                    <div className='text-lg font-semibold text-success'>{mainLeague?.name}</div>
-                    {mainLeague?.country && (
-                      <div className='text-sm opacity-60'>{mainLeague.country}</div>
-                    )}
+                    <div className='text-lg font-semibold text-success'>{selectedLeague?.name}</div>
+                    <div className='text-sm opacity-60'>{selectedMainCountry}</div>
                   </div>
 
                   <div>
@@ -242,7 +353,7 @@ const NewGame = () => {
 
                   <div>
                     <div className='text-xs opacity-60 uppercase tracking-wide mb-2'>
-                      Países selecionados
+                      Países na simulação
                     </div>
                     <div className='flex flex-wrap gap-2'>
                       {selectedCountries.map((c) => (
@@ -304,7 +415,7 @@ const NewGame = () => {
                 type='button'
                 className='btn btn-primary'
                 onClick={goToStep2}
-                disabled={selectedLeagueIds.length === 0}
+                disabled={!coachName.trim()}
               >
                 Próximo →
               </button>
@@ -315,13 +426,24 @@ const NewGame = () => {
                 type='button'
                 className='btn btn-primary'
                 onClick={goToStep3}
-                disabled={!mainLeagueId || !teamId}
+                disabled={selectedCountries.length === 0}
               >
                 Próximo →
               </button>
             )}
 
             {step === 3 && (
+              <button
+                type='button'
+                className='btn btn-primary'
+                onClick={goToStep4}
+                disabled={!selectedLeagueId || !teamId}
+              >
+                Próximo →
+              </button>
+            )}
+
+            {step === 4 && (
               <button
                 type='button'
                 className='btn btn-success'

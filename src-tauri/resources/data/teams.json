@@ -7,6 +7,7 @@
       "State": "PR",
       "Shield": "PR",
       "LeagueId": "bra-serie-a",
+      "Tier": 3,
       "Coach": {
         "Id": "athletico-pr-coach",
         "Name": "Fernando Silva",
@@ -23,6 +24,7 @@
       "State": "MG",
       "Shield": "MG",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "atletico-mg-coach",
         "Name": "Miguel Souza",
@@ -39,6 +41,7 @@
       "State": "BA",
       "Shield": "BA",
       "LeagueId": "bra-serie-a",
+      "Tier": 3,
       "Coach": {
         "Id": "bahia-coach",
         "Name": "Paulo Santos",
@@ -55,6 +58,7 @@
       "State": "RJ",
       "Shield": "RJ",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "botafogo-coach",
         "Name": "Afonso Costa",
@@ -71,6 +75,7 @@
       "State": "CE",
       "Shield": "CE",
       "LeagueId": "bra-serie-a",
+      "Tier": 4,
       "Coach": {
         "Id": "ceara-coach",
         "Name": "Luis Machado",
@@ -87,6 +92,7 @@
       "State": "SP",
       "Shield": "SP",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "corinthians-coach",
         "Name": "Miguel Machado",
@@ -103,6 +109,7 @@
       "State": "SC",
       "Shield": "SC",
       "LeagueId": "bra-serie-a",
+      "Tier": 4,
       "Coach": {
         "Id": "criciuma-coach",
         "Name": "Fernando Santos",
@@ -119,6 +126,7 @@
       "State": "MG",
       "Shield": "MG",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "cruzeiro-coach",
         "Name": "Luis Silva",
@@ -135,6 +143,7 @@
       "State": "MT",
       "Shield": "MT",
       "LeagueId": "bra-serie-a",
+      "Tier": 4,
       "Coach": {
         "Id": "cuiaba-coach",
         "Name": "Antonio Nunes",
@@ -151,6 +160,7 @@
       "State": "RJ",
       "Shield": "RJ",
       "LeagueId": "bra-serie-a",
+      "Tier": 1,
       "Coach": {
         "Id": "flamengo-coach",
         "Name": "Antonio Oliveira",
@@ -167,6 +177,7 @@
       "State": "RJ",
       "Shield": "RJ",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "fluminense-coach",
         "Name": "Carlos Oliveira",
@@ -183,6 +194,7 @@
       "State": "CE",
       "Shield": "CE",
       "LeagueId": "bra-serie-a",
+      "Tier": 4,
       "Coach": {
         "Id": "fortaleza-coach",
         "Name": "Jorge Gomes",
@@ -199,6 +211,7 @@
       "State": "RS",
       "Shield": "RS",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "gremio-coach",
         "Name": "Carlos Souza",
@@ -215,6 +228,7 @@
       "State": "RS",
       "Shield": "RS",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "internacional-coach",
         "Name": "Afonso Ferreira",
@@ -231,6 +245,7 @@
       "State": "RS",
       "Shield": "RS",
       "LeagueId": "bra-serie-a",
+      "Tier": 4,
       "Coach": {
         "Id": "juventude-coach",
         "Name": "José Silva",
@@ -247,6 +262,7 @@
       "State": "SP",
       "Shield": "SP",
       "LeagueId": "bra-serie-a",
+      "Tier": 1,
       "Coach": {
         "Id": "palmeiras-coach",
         "Name": "José Barbosa",
@@ -263,6 +279,7 @@
       "State": "SP",
       "Shield": "SP",
       "LeagueId": "bra-serie-a",
+      "Tier": 4,
       "Coach": {
         "Id": "red-bull-bragantino-coach",
         "Name": "Manuel Costa",
@@ -279,6 +296,7 @@
       "State": "SP",
       "Shield": "SP",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "sao-paulo-coach",
         "Name": "Antonio Machado",
@@ -295,6 +313,7 @@
       "State": "RJ",
       "Shield": "RJ",
       "LeagueId": "bra-serie-a",
+      "Tier": 2,
       "Coach": {
         "Id": "vasco-coach",
         "Name": "Jorge Martins",
@@ -311,6 +330,7 @@
       "State": "BA",
       "Shield": "BA",
       "LeagueId": "bra-serie-a",
+      "Tier": 3,
       "Coach": {
         "Id": "vitoria-coach",
         "Name": "Ricardo Dias",
@@ -325,7 +345,7 @@
       "Name": "América-MG",
       "Country": "Brazil",
       "State": "",
-      "Shield": "AMÉR",
+      "Shield": "AMÃÂR",
       "LeagueId": "bra-serie-b",
       "Coach": {
         "Id": "america-mg-coach",
@@ -341,7 +361,7 @@
       "Name": "Atlético-GO",
       "Country": "Brazil",
       "State": "",
-      "Shield": "ATLÉ",
+      "Shield": "ATLÃÂ",
       "LeagueId": "bra-serie-b",
       "Coach": {
         "Id": "atletico-go-coach",
@@ -357,7 +377,7 @@
       "Name": "Goiás",
       "Country": "Brazil",
       "State": "",
-      "Shield": "GOIÁ",
+      "Shield": "GOIÃÂ",
       "LeagueId": "bra-serie-b",
       "Coach": {
         "Id": "goias-coach",
@@ -724,8 +744,8 @@
       "Id": "barcelona",
       "Name": "Barcelona",
       "Country": "Spain",
-      "State": "Cataluña",
-      "Shield": "Cataluña",
+      "State": "CataluÃÂ±a",
+      "Shield": "CataluÃÂ±a",
       "LeagueId": "esp-la-liga",
       "Coach": {
         "Id": "barcelona-coach",
@@ -948,8 +968,8 @@
       "Id": "girona",
       "Name": "Girona",
       "Country": "Spain",
-      "State": "Cataluña",
-      "Shield": "Cataluña",
+      "State": "CataluÃÂ±a",
+      "Shield": "CataluÃÂ±a",
       "LeagueId": "esp-la-liga",
       "Coach": {
         "Id": "girona-coach",
@@ -1012,8 +1032,8 @@
       "Id": "espanyol",
       "Name": "RCD Espanyol",
       "Country": "Spain",
-      "State": "Cataluña",
-      "Shield": "Cataluña",
+      "State": "CataluÃÂ±a",
+      "Shield": "CataluÃÂ±a",
       "LeagueId": "esp-la-liga",
       "Coach": {
         "Id": "espanyol-coach",
@@ -1236,8 +1256,8 @@
       "Id": "sabadell",
       "Name": "Sabadell",
       "Country": "Spain",
-      "State": "Cataluña",
-      "Shield": "Cataluña",
+      "State": "CataluÃÂ±a",
+      "Shield": "CataluÃÂ±a",
       "LeagueId": "esp-la-liga-2",
       "Coach": {
         "Id": "sabadell-coach",
@@ -1330,7 +1350,7 @@
     },
     {
       "Id": "logrones",
-      "Name": "Logroñés",
+      "Name": "LogroÃÂ±és",
       "Country": "Spain",
       "State": "La Rioja",
       "Shield": "La Rioja",
@@ -1342,7 +1362,7 @@
         "Experience": 30,
         "Tactics": "5-4-1"
       },
-      "Stadium": "Estadio do Logroñés"
+      "Stadium": "Estadio do LogroÃÂ±és"
     },
     {
       "Id": "zaf-kaizer-chiefs",

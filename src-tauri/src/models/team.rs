@@ -11,11 +11,17 @@ pub struct Team {
     #[serde(default)]
     pub stadium: String,
     pub league_id: String,
+    #[serde(default = "default_team_tier")]
+    pub tier: u8,
+    #[serde(default)]
+    pub budget: i64,
     #[serde(default)]
     pub coach: Option<Coach>,
     #[serde(default)]
     pub squad: Vec<Player>,
 }
+
+fn default_team_tier() -> u8 { 3 }
 
 impl Team {
     /// Força do time — média dos overalls dos 11 melhores titulares.
@@ -42,6 +48,33 @@ impl Team {
         starters.sort_by_key(|p| p.position.display_rank());
         starters
     }
+
+    /// Calcula orçamento inicial baseado no tier da liga e do clube
+    pub fn calculate_initial_budget(league_tier: u8, team_tier: u8) -> i64 {
+        use rand::Rng;
+        
+        // Base por tier da liga
+        let base = match league_tier {
+            1 => 100_000_000,  // R$ 100M (La Liga, Premier League)
+            2 => 50_000_000,   // R$ 50M (Brasileirão Série A)
+            3 => 25_000_000,   // R$ 25M (Série B, ligas menores tier 2)
+            4 => 12_000_000,   // R$ 12M (Séries inferiores)
+            _ => 5_000_000,    // R$ 5M (default)
+        };
+        
+        // Multiplicador por tier do clube
+        let multiplier = match team_tier {
+            1 => 1.0,   // Elite (100%)
+            2 => 0.7,   // Grande (70%)
+            3 => 0.5,   // Médio (50%)
+            _ => 0.3,   // Pequeno (30%)
+        };
+        
+        // Variação aleatória de ±10%
+        let variation = rand::thread_rng().gen_range(0.90..=1.10);
+        
+        (base as f64 * multiplier * variation) as i64
+    }
 }
 
 /// Schema do teams.json — lista de times com seus TeamIds e LeagueId.
@@ -60,6 +93,8 @@ pub struct TeamRecord {
     #[serde(default)]
     pub stadium: String,
     pub league_id: String,
+    #[serde(default = "default_team_tier")]
+    pub tier: u8,
     #[serde(default)]
     pub coach: Option<Coach>,
 }

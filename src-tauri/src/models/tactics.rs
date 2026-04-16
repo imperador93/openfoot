@@ -88,6 +88,8 @@ pub enum PlayStyle {
     BolaDireta,
     #[serde(rename = "Jogo Aereo")]
     JogoAereo,
+    #[serde(rename = "Retranca")]
+    Retranca,
     #[serde(rename = "Normal")]
     Normal,
 }
@@ -101,6 +103,7 @@ impl PlayStyle {
             PlayStyle::Contraataque => (1.10, 0.90, 1.15),
             PlayStyle::BolaDireta => (1.00, 0.85, 1.20),
             PlayStyle::JogoAereo => (1.05, 0.95, 1.10),
+            PlayStyle::Retranca => (1.40, 0.70, 0.55),
             PlayStyle::Normal => (1.00, 1.00, 1.00),
         }
     }
@@ -113,6 +116,7 @@ impl PlayStyle {
             PlayStyle::Contraataque => [1, 5, 1, 1, 1, 1],
             PlayStyle::BolaDireta => [2, 1, 3, 1, 2, 1],
             PlayStyle::JogoAereo => [1, 1, 1, 1, 5, 1],
+            PlayStyle::Retranca => [1, 2, 1, 1, 1, 1],
             PlayStyle::Normal => [3, 1, 1, 1, 1, 1],
         }
     }
@@ -126,6 +130,25 @@ impl PlayStyle {
             PlayStyle::JogoAereo   => 1.05,
             PlayStyle::Contraataque => 0.95,
             PlayStyle::BolaDireta  => 0.90,
+            PlayStyle::Retranca    => 0.85,
+        }
+    }
+
+    /// Modificador de interação entre estilos de jogo.
+    /// Retorna um multiplicador aplicado na força do meio-campo antes do zone_contest.
+    /// Valores positivos favorecem o estilo self contra opponent.
+    pub fn interaction_modifier(&self, opponent: &PlayStyle) -> f64 {
+        match (self, opponent) {
+            // Pressing Alto supera Posse de Bola
+            (PlayStyle::PressingAlto, PlayStyle::PosseDeBola) => 0.15,
+            // Pressing Alto sofre contra Retranca
+            (PlayStyle::PressingAlto, PlayStyle::Retranca) => -0.20,
+            // Posse de Bola supera Contra-ataque (no meio-campo)
+            (PlayStyle::PosseDeBola, PlayStyle::Contraataque) => 0.10,
+            // Retranca supera Pressing Alto
+            (PlayStyle::Retranca, PlayStyle::PressingAlto) => 0.15,
+            // Todos os outros casos: sem modificador
+            _ => 0.0,
         }
     }
 }

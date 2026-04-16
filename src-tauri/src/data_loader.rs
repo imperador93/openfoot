@@ -54,11 +54,17 @@ pub fn load_all_leagues() -> Result<HashMap<String, League>> {
                 // Pré-seleciona os 11 melhores como Titular,
                 // igual ao LoadRosterForSelection() do MainForm.cs
                 presort_squad(&mut squad);
+                
+                // Calcular orçamento inicial
+                let budget = Team::calculate_initial_budget(lr.tier, rec.tier);
+                
                 Some(Team {
                     id: rec.id.clone(),
                     name: rec.name.clone(),
                     stadium: rec.stadium.clone(),
                     league_id: lr.id.clone(),
+                    tier: rec.tier,
+                    budget,
                     coach: rec.coach.clone(),
                     squad,
                 })
@@ -68,9 +74,13 @@ pub fn load_all_leagues() -> Result<HashMap<String, League>> {
         result.insert(
             lr.id.clone(),
             League {
-                id: lr.id,
-                name: lr.name,
-                country: lr.country,
+                id: lr.id.clone(),
+                name: lr.name.clone(),
+                country: lr.country.clone(),
+                tier: lr.tier,
+                division_level: lr.division_level,
+                lower_division_id: lr.lower_division_id.clone(),
+                upper_division_id: lr.upper_division_id.clone(),
                 teams,
             },
         );
@@ -89,7 +99,7 @@ pub fn load_league_for_play(league_id: &str) -> Result<League> {
 
 // ── helpers internos ────────────────────────────────────────────────────────
 
-fn load_leagues_file() -> Result<Vec<LeagueRecord>> {
+pub fn load_leagues_file() -> Result<Vec<LeagueRecord>> {
     let path = asset_path(LEAGUES_FILE);
     let raw = std::fs::read_to_string(&path)
         .with_context(|| format!("Não foi possível ler {}", path))?;
@@ -98,7 +108,7 @@ fn load_leagues_file() -> Result<Vec<LeagueRecord>> {
     Ok(parsed.leagues)
 }
 
-fn load_teams_file() -> Result<Vec<TeamRecord>> {
+pub fn load_teams_file() -> Result<Vec<TeamRecord>> {
     let path = asset_path(TEAMS_FILE);
     let raw = std::fs::read_to_string(&path)
         .with_context(|| format!("Não foi possível ler {}", path))?;
@@ -107,11 +117,19 @@ fn load_teams_file() -> Result<Vec<TeamRecord>> {
     Ok(parsed.teams)
 }
 
-fn load_players_file() -> Result<Vec<Player>> {
+pub fn load_players_file() -> Result<Vec<Player>> {
     let path = asset_path(PLAYERS_FILE);
     let raw = std::fs::read_to_string(&path)
         .with_context(|| format!("Não foi possível ler {}", path))?;
+    
+    // Tentar fazer parse e capturar erro detalhado do serde
     let parsed: PlayersFile = serde_json::from_str(&raw)
+        .map_err(|e| {
+            eprintln!("❌ Erro de deserialização em {}:", path);
+            eprintln!("   Linha: {}, Coluna: {}", e.line(), e.column());
+            eprintln!("   Mensagem: {}", e);
+            e
+        })
         .with_context(|| format!("JSON inválido em {}", path))?;
     Ok(parsed.players)
 }

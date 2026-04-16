@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 export interface TeamOption {
   id: string
   name: string
+  budget?: number
 }
 
 export interface SquadPlayer {
@@ -17,6 +18,8 @@ export interface SquadPlayer {
   stamina: number
   status?: string
   energy?: number
+  age?: number
+  nationality?: string
 }
 
 export interface TeamDetail {
@@ -44,8 +47,10 @@ export interface Fixture {
   homeTeamId: string
   homeTeamName: string
   homeStadium: string
+  homeCoachName: string
   awayTeamId: string
   awayTeamName: string
+  awayCoachName: string
 }
 
 export interface TableEntry {
@@ -72,10 +77,16 @@ export interface BackgroundLeagueSnapshot {
 export interface CareerSnapshot {
   leagueId: string
   playerTeamId: string
+  coachName: string
+  morale: number
+  currentSeason: number
+  isSeasonEnded: boolean
   activeLeagueIds: string[]
   currentRound: number
   totalRounds: number
   playerPosition: number
+  playerTeamBudget: number
+  leagueDivisionLevel: number
   nextMatchDate: string
   table: TableEntry[]
   nextRoundFixtures: Fixture[]
@@ -84,17 +95,20 @@ export interface CareerSnapshot {
 
 export interface MatchEvent {
   minute: number
-  eventType: string // 'goal' | 'shot' | 'dangerous'
+  eventType: string // 'goal' | 'nearMiss' | 'save' | 'foul' | 'yellowCard' | 'redCard'
   teamSide: string  // 'home' | 'away'
   teamName: string
+  playerName?: string
 }
 
 export interface RoundMatch {
   homeTeamId: string
   homeTeamName: string
+  homeCoachName: string
   homeGoals: number
   awayTeamId: string
   awayTeamName: string
+  awayCoachName: string
   awayGoals: number
   events: MatchEvent[]
   playerEnergyAfter?: Record<string, number>
@@ -130,6 +144,7 @@ export interface SimulateRoundResult {
   backgroundLeagues: BackgroundLeagueRound[]
   snapshot: CareerSnapshot
   playerEnergyAfter?: Record<string, number>
+  dismissed: boolean
 }
 
 export type SlotZone = 'GOL' | 'DEF' | 'MEI' | 'ATA'
@@ -174,6 +189,8 @@ interface RawSquadPlayer {
   defense?: number
   stamina?: number
   status?: string
+  age?: number
+  nationality?: string
   Id?: string
   Name?: string
   Position?: string
@@ -184,6 +201,8 @@ interface RawSquadPlayer {
   Defense?: number
   Stamina?: number
   Status?: string
+  Age?: number
+  Nationality?: string
 }
 
 interface RawTeamDetail extends RawTeam {
@@ -233,6 +252,8 @@ const normalizeSquadPlayer = (raw: RawSquadPlayer): SquadPlayer | null => {
   const defense = raw.defense ?? raw.Defense
   const stamina = raw.stamina ?? raw.Stamina
   const status = raw.status ?? raw.Status
+  const age = raw.age ?? raw.Age
+  const nationality = raw.nationality ?? raw.Nationality
 
   if (
     !id ||
@@ -259,6 +280,8 @@ const normalizeSquadPlayer = (raw: RawSquadPlayer): SquadPlayer | null => {
     defense,
     stamina,
     status,
+    age,
+    nationality,
   }
 }
 
@@ -320,11 +343,13 @@ export const startNewCareer = async (leagueId: string, teamId: string) =>
 export const startNewCareerMulti = async (
   leagueId: string,
   teamId: string,
+  coachName: string,
   activeLeagueIds: string[]
 ) =>
   invoke<CareerSnapshot>('start_new_career_multi', {
     leagueId,
     teamId,
+    coachName,
     activeLeagueIds,
   })
 
@@ -334,6 +359,9 @@ export const simulateCareerRound = async (formation: string, playStyle: string) 
 export const getCareerSnapshot = async () =>
   invoke<CareerSnapshot>('get_career_snapshot')
 
+export const advanceToNextSeason = async () =>
+  invoke<CareerSnapshot>('advance_to_next_season')
+
 export const saveLineup = async (lineup: SavedLineup) =>
   invoke<void>('save_lineup', { lineup })
 
@@ -342,3 +370,50 @@ export const getLineup = async () =>
 
 export const getPlayerEnergies = async () =>
   invoke<Record<string, number>>('get_player_energies')
+
+// ===== CALENDAR DATA =====
+
+export interface CalendarMatch {
+  homeTeamId: string
+  homeTeamName: string
+  awayTeamId: string
+  awayTeamName: string
+  homeGoals: number | null
+  awayGoals: number | null
+  isPlayerMatch: boolean
+}
+
+export interface CalendarRound {
+  roundNumber: number
+  matches: CalendarMatch[]
+  isPlayed: boolean
+}
+
+export interface CalendarData {
+  leagueId: string
+  leagueName: string
+  playerTeamId: string
+  currentRound: number
+  totalRounds: number
+  currentSeason: number
+  rounds: CalendarRound[]
+}
+
+export const getCalendarData = async () =>
+  invoke<CalendarData>('get_calendar_data')
+
+// ===== COACH TRANSFERS =====
+
+export interface ClubOffer {
+  teamId: string
+  teamName: string
+  leagueId: string
+  currentPosition: number
+  morale: number
+}
+
+export const listCoachJobOffers = async () =>
+  invoke<ClubOffer[]>('list_coach_job_offers')
+
+export const acceptCoachJobOffer = async (newTeamId: string) =>
+  invoke<CareerSnapshot>('accept_coach_job_offer', { newTeamId })

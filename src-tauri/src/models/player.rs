@@ -23,6 +23,12 @@ pub struct Player {
     pub league_id: String,
     #[serde(default)]
     pub status: PlayerStatus,
+    /// Idade do jogador (opcional, presente em jogadores importados do CSV)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub age: Option<u8>,
+    /// Nacionalidade do jogador (opcional, código de 3 letras ISO)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nationality: Option<String>,
     /// Energia atual (0–100). Não persistida no JSON; inicializada em 100 na carreira.
     #[serde(skip)]
     pub energy: f64,
@@ -45,6 +51,8 @@ impl Default for Player {
             team_id: String::new(),
             league_id: String::new(),
             status: PlayerStatus::default(),
+            age: None,
+            nationality: None,
             energy: 100.0,
         }
     }
